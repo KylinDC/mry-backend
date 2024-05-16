@@ -1,4 +1,4 @@
-package com.mryqr.core.member.domain.task;
+package com.mryqr.core.tenant.domain.task;
 
 import com.mryqr.core.common.domain.task.OnetimeTask;
 import com.mryqr.core.tenant.domain.TenantRepository;
