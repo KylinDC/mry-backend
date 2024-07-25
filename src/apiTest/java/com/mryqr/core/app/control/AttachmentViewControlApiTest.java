@@ -23,12 +23,12 @@ public class AttachmentViewControlApiTest extends BaseApiTest {
     @Test
     public void should_create_control_normally() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         PAttachmentViewControl control = defaultAttachmentViewControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         Control updatedControl = app.controlByIdOptional(control.getId()).get();
         assertEquals(control, updatedControl);
     }
@@ -36,15 +36,15 @@ public class AttachmentViewControlApiTest extends BaseApiTest {
     @Test
     public void should_fail_create_control_if_attachment_id_duplicated() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         UploadedFile uploadedFile = rImageFile();
         PAttachmentViewControl control = defaultAttachmentViewControlBuilder().attachments(newArrayList(uploadedFile, uploadedFile)).build();
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         AppSetting setting = app.getSetting();
         setting.homePage().getControls().add(control);
 
-        assertError(() -> AppApi.updateAppSettingRaw(response.getJwt(), response.getAppId(), app.getVersion(), setting), ATTACHMENT_ID_DUPLICATED);
+        assertError(() -> AppApi.updateAppSettingRaw(response.jwt(), response.appId(), app.getVersion(), setting), ATTACHMENT_ID_DUPLICATED);
     }
 
 }

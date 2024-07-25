@@ -148,29 +148,29 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void domain_events_mechanism_should_work_for_integration() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String groupId = IntegrationApi.createGroup(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
                 IntegrationCreateGroupCommand.builder()
-                        .appId(response.getAppId())
+                        .appId(response.appId())
                         .name("aGroupName")
                         .build());
 
         GroupCreatedEvent groupCreatedEvent = domainEventDao.latestEventFor(groupId, GROUP_CREATED, GroupCreatedEvent.class);
         assertEquals(groupId, groupCreatedEvent.getGroupId());
-        assertEquals(response.getAppId(), groupCreatedEvent.getAppId());
-        Tenant updatedTenant = tenantRepository.byId(response.getTenantId());
-        assertEquals(2, updatedTenant.getResourceUsage().getGroupCountForApp(response.getAppId()));
+        assertEquals(response.appId(), groupCreatedEvent.getAppId());
+        Tenant updatedTenant = tenantRepository.byId(response.tenantId());
+        assertEquals(2, updatedTenant.getResourceUsage().getGroupCountForApp(response.appId()));
     }
 
     @Test
     public void should_list_apps() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
-        App app = appRepository.byId(response.getAppId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
+        App app = appRepository.byId(response.appId());
 
         List<QIntegrationListApp> listApps = IntegrationApi.listApps(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret());
         assertEquals(1, listApps.size());
@@ -188,9 +188,9 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_app() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
-        App app = appRepository.byId(response.getAppId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
+        App app = appRepository.byId(response.appId());
 
         QIntegrationApp qIntegrationApp = IntegrationApi.fetchApp(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), app.getId());
 
@@ -210,42 +210,42 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_deactivate_and_activate_app() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
-        IntegrationApi.deactivateApp(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), response.getAppId());
-        assertFalse(appRepository.byId(response.getAppId()).isActive());
+        IntegrationApi.deactivateApp(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), response.appId());
+        assertFalse(appRepository.byId(response.appId()).isActive());
 
-        IntegrationApi.activateApp(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), response.getAppId());
-        assertTrue(appRepository.byId(response.getAppId()).isActive());
+        IntegrationApi.activateApp(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), response.appId());
+        assertTrue(appRepository.byId(response.appId()).isActive());
     }
 
     @Test
     public void should_new_submission() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         FSingleLineTextControl control = defaultSingleLineTextControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         SingleLineTextAnswer answer = rAnswer(control);
         String submissionId = IntegrationApi.createSubmission(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 IntegrationNewSubmissionCommand.builder()
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .answers(newHashSet(answer))
                         .build());
 
         Submission submission = submissionRepository.byId(submissionId);
         assertEquals(1, submission.allAnswers().size());
-        assertEquals(response.getAppId(), submission.getAppId());
-        assertEquals(response.getQrId(), submission.getQrId());
-        assertEquals(response.getHomePageId(), submission.getPageId());
+        assertEquals(response.appId(), submission.getAppId());
+        assertEquals(response.qrId(), submission.getQrId());
+        assertEquals(response.homePageId(), submission.getPageId());
         assertNull(submission.getCreatedBy());
-        assertEquals(response.getDefaultGroupId(), submission.getGroupId());
-        assertEquals(response.getTenantId(), submission.getTenantId());
+        assertEquals(response.defaultGroupId(), submission.getGroupId());
+        assertEquals(response.tenantId(), submission.getTenantId());
         assertEquals(control.getId(), submission.allAnswers().values().stream().findAny().get().getControlId());
         assertNull(submission.getApproval());
     }
@@ -253,31 +253,31 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_new_submission_for_member() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         FSingleLineTextControl control = defaultSingleLineTextControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         SingleLineTextAnswer answer = rAnswer(control);
         String submissionId = IntegrationApi.createSubmission(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 IntegrationNewSubmissionCommand.builder()
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .answers(newHashSet(answer))
-                        .memberId(response.getMemberId())
+                        .memberId(response.memberId())
                         .build());
 
         Submission submission = submissionRepository.byId(submissionId);
-        assertEquals(response.getMemberId(), submission.getCreatedBy());
+        assertEquals(response.memberId(), submission.getCreatedBy());
     }
 
     @Test
     public void should_new_submission_for_custom_member_id() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String customMemberId = rCustomId();
         IntegrationCreateMemberCommand command = IntegrationCreateMemberCommand.builder()
@@ -292,14 +292,14 @@ public class IntegrationControllerApiTest extends BaseApiTest {
                 command);
 
         FSingleLineTextControl control = defaultSingleLineTextControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         SingleLineTextAnswer answer = rAnswer(control);
         String submissionId = IntegrationApi.createSubmission(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 IntegrationNewSubmissionCommand.builder()
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .answers(newHashSet(answer))
                         .memberCustomId(customMemberId)
                         .build());
@@ -311,38 +311,38 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_new_submission_by_qr_custom_id() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String qrCustomId = rCustomId();
         IntegrationCreateQrSimpleCommand createQrCommand = IntegrationCreateQrSimpleCommand.builder()
                 .name("This is a QR")
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .customId(qrCustomId)
                 .build();
         IntegrationCreateQrResponse qrResponse = IntegrationApi.createQrSimple(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), createQrCommand);
 
         FSingleLineTextControl control = defaultSingleLineTextControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         SingleLineTextAnswer answer = rAnswer(control);
         String submissionId = IntegrationApi.createSubmissionByQrCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(),
+                response.appId(),
                 qrCustomId,
                 IntegrationNewSubmissionCommand.builder()
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .answers(newHashSet(answer))
                         .build());
 
         Submission submission = submissionRepository.byId(submissionId);
         assertEquals(1, submission.allAnswers().size());
-        assertEquals(response.getAppId(), submission.getAppId());
+        assertEquals(response.appId(), submission.getAppId());
         assertEquals(qrResponse.getQrId(), submission.getQrId());
-        assertEquals(response.getHomePageId(), submission.getPageId());
+        assertEquals(response.homePageId(), submission.getPageId());
         assertNull(submission.getCreatedBy());
-        assertEquals(response.getDefaultGroupId(), submission.getGroupId());
-        assertEquals(response.getTenantId(), submission.getTenantId());
+        assertEquals(response.defaultGroupId(), submission.getGroupId());
+        assertEquals(response.tenantId(), submission.getTenantId());
         assertEquals(control.getId(), submission.allAnswers().values().stream().findAny().get().getControlId());
         assertNull(submission.getApproval());
     }
@@ -350,27 +350,27 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_update_submission_when_create_if_submission_already_exists_for_once_per_instance() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         FSingleLineTextControl control = defaultSingleLineTextControl();
         PageSetting pageSetting = defaultPageSettingBuilder().submitType(ONCE_PER_INSTANCE).build();
-        AppApi.updateAppHomePageSettingAndControls(response.getJwt(), response.getAppId(), pageSetting, control);
+        AppApi.updateAppHomePageSettingAndControls(response.jwt(), response.appId(), pageSetting, control);
 
         String submissionId = IntegrationApi.createSubmission(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 IntegrationNewSubmissionCommand.builder()
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .answers(newHashSet(rAnswer(control)))
                         .build());
 
         SingleLineTextAnswer newAnswer = rAnswer(control);
         String updatedSubmissionId = IntegrationApi.createSubmission(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 IntegrationNewSubmissionCommand.builder()
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .answers(newHashSet(newAnswer))
                         .build());
 
@@ -383,18 +383,18 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_not_create_submission_for_once_per_member_submit_type() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         FSingleLineTextControl control = defaultSingleLineTextControl();
         PageSetting pageSetting = defaultPageSettingBuilder().submitType(ONCE_PER_MEMBER).build();
-        AppApi.updateAppHomePageSettingAndControls(response.getJwt(), response.getAppId(), pageSetting, control);
+        AppApi.updateAppHomePageSettingAndControls(response.jwt(), response.appId(), pageSetting, control);
 
         assertError(() -> IntegrationApi.createSubmissionRaw(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 IntegrationNewSubmissionCommand.builder()
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .answers(newHashSet(rAnswer(control)))
                         .build()), SUBMISSION_REQUIRE_MEMBER);
     }
@@ -403,17 +403,17 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fail_create_submission_if_qr_inactive() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
         FSingleLineTextControl control = defaultSingleLineTextControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
-        QrApi.deactivate(response.getJwt(), response.getQrId());
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
+        QrApi.deactivate(response.jwt(), response.qrId());
 
         assertError(() -> IntegrationApi.createSubmissionRaw(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 IntegrationNewSubmissionCommand.builder()
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .answers(newHashSet(rAnswer(control)))
                         .build()), QR_NOT_ACTIVE);
     }
@@ -421,19 +421,19 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fail_create_submission_if_group_inactive() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        GroupApi.createGroup(response.getJwt(), response.getAppId());
+        GroupApi.createGroup(response.jwt(), response.appId());
 
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
         FSingleLineTextControl control = defaultSingleLineTextControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
-        GroupApi.deactivateGroup(response.getJwt(), response.getDefaultGroupId());
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
+        GroupApi.deactivateGroup(response.jwt(), response.defaultGroupId());
 
         assertError(() -> IntegrationApi.createSubmissionRaw(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 IntegrationNewSubmissionCommand.builder()
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .answers(newHashSet(rAnswer(control)))
                         .build()), GROUP_NOT_ACTIVE);
     }
@@ -441,30 +441,30 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_create_both_submission_and_qr_for_template_qr() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        QrApi.markTemplate(response.getJwt(), response.getQrId());
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        QrApi.markTemplate(response.jwt(), response.qrId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         FSingleLineTextControl control = defaultSingleLineTextControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         SingleLineTextAnswer answer = rAnswer(control);
         String submissionId = IntegrationApi.createSubmission(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 IntegrationNewSubmissionCommand.builder()
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .answers(newHashSet(answer))
                         .build());
 
         Submission submission = submissionRepository.byId(submissionId);
-        assertNotEquals(response.getQrId(), submission.getQrId());
+        assertNotEquals(response.qrId(), submission.getQrId());
         QR qr = qrRepository.byId(submission.getQrId());
-        assertEquals(response.getAppId(), qr.getAppId());
-        assertEquals(response.getDefaultGroupId(), qr.getGroupId());
-        assertNotEquals(response.getPlateId(), qr.getPlateId());
+        assertEquals(response.appId(), qr.getAppId());
+        assertEquals(response.defaultGroupId(), qr.getGroupId());
+        assertNotEquals(response.plateId(), qr.getPlateId());
         Plate plate = plateRepository.byId(qr.getPlateId());
-        assertEquals(response.getDefaultGroupId(), plate.getGroupId());
+        assertEquals(response.defaultGroupId(), plate.getGroupId());
         assertEquals(qr.getId(), plate.getQrId());
         assertEquals(qr.getAppId(), plate.getAppId());
     }
@@ -472,13 +472,13 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_update_submission() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         FSingleLineTextControl control = defaultSingleLineTextControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswer(control));
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswer(control));
         SingleLineTextAnswer updateAnswer = rAnswer(control);
         IntegrationApi.updateSubmission(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), submissionId, IntegrationUpdateSubmissionCommand.builder().answers(newHashSet(updateAnswer)).build());
 
@@ -490,27 +490,27 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_update_submission_for_member() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         FSingleLineTextControl control = defaultSingleLineTextControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswer(control));
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswer(control));
         SingleLineTextAnswer updateAnswer = rAnswer(control);
         IntegrationApi.updateSubmission(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), submissionId,
-                IntegrationUpdateSubmissionCommand.builder().answers(newHashSet(updateAnswer)).memberId(response.getMemberId()).build());
+                IntegrationUpdateSubmissionCommand.builder().answers(newHashSet(updateAnswer)).memberId(response.memberId()).build());
 
         Submission submission = submissionRepository.byId(submissionId);
         assertEquals(updateAnswer, submission.answerForControlOptional(control.getId()).get());
-        assertEquals(response.getMemberId(), submission.getUpdatedBy());
+        assertEquals(response.memberId(), submission.getUpdatedBy());
     }
 
     @Test
     public void should_update_submission_for_custom_member_id() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String customMemberId = rCustomId();
         IntegrationCreateMemberCommand command = IntegrationCreateMemberCommand.builder()
@@ -525,9 +525,9 @@ public class IntegrationControllerApiTest extends BaseApiTest {
                 command);
 
         FSingleLineTextControl control = defaultSingleLineTextControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswer(control));
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswer(control));
         SingleLineTextAnswer updateAnswer = rAnswer(control);
         IntegrationApi.updateSubmission(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), submissionId,
                 IntegrationUpdateSubmissionCommand.builder().answers(newHashSet(updateAnswer)).memberCustomId(customMemberId).build());
@@ -540,13 +540,13 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fail_update_submission_if_qr_inactive() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
         FSingleLineTextControl control = defaultSingleLineTextControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswer(control));
-        QrApi.deactivate(response.getJwt(), response.getQrId());
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswer(control));
+        QrApi.deactivate(response.jwt(), response.qrId());
 
         IntegrationUpdateSubmissionCommand updateSubmissionCommand = IntegrationUpdateSubmissionCommand.builder().answers(newHashSet(rAnswer(control))).build();
         assertError(() -> IntegrationApi.updateSubmissionRaw(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), submissionId, updateSubmissionCommand), QR_NOT_ACTIVE);
@@ -555,15 +555,15 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_delete_submission() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         FSingleLineTextControl control = defaultSingleLineTextControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswer(control));
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswer(control));
         Submission submission = submissionRepository.byId(submissionId);
         assertEquals(1, submission.allAnswers().size());
-        assertEquals(response.getAppId(), submission.getAppId());
+        assertEquals(response.appId(), submission.getAppId());
 
         IntegrationApi.deleteSubmission(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), submissionId);
         Optional<Submission> deleted = submissionRepository.byIdOptional(submissionId);
@@ -573,13 +573,13 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_submission() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         FSingleLineTextControl control = defaultSingleLineTextControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswer(control));
-        SubmissionApi.updateSubmission(response.getJwt(), submissionId, rAnswer(control));
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswer(control));
+        SubmissionApi.updateSubmission(response.jwt(), submissionId, rAnswer(control));
 
         QIntegrationSubmission qIntegrationSubmission = IntegrationApi.fetchSubmission(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), submissionId);
         Submission submission = submissionRepository.byId(submissionId);
@@ -600,19 +600,19 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_create_qr_simple() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateQrSimpleCommand command = IntegrationCreateQrSimpleCommand.builder()
                 .name("This is a QR")
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .customId(rCustomId())
                 .build();
         IntegrationCreateQrResponse qrResponse = IntegrationApi.createQrSimple(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), command);
         assertNotNull(qrResponse.getQrId());
         assertNotNull(qrResponse.getPlateId());
-        assertEquals(response.getAppId(), qrResponse.getAppId());
-        assertEquals(response.getDefaultGroupId(), qrResponse.getGroupId());
+        assertEquals(response.appId(), qrResponse.getAppId());
+        assertEquals(response.defaultGroupId(), qrResponse.getGroupId());
 
         QR qr = qrRepository.byId(qrResponse.getQrId());
         assertNotNull(qr);
@@ -623,20 +623,20 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fail_create_qr_if_custom_id_duplicated() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String customId = rCustomId();
         IntegrationCreateQrSimpleCommand command = IntegrationCreateQrSimpleCommand.builder()
                 .name("This is a QR")
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .customId(customId)
                 .build();
         IntegrationApi.createQrSimple(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), command);
 
         IntegrationCreateQrSimpleCommand anotherCommand = IntegrationCreateQrSimpleCommand.builder()
                 .name("This is another QR")
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .customId(customId)
                 .build();
 
@@ -647,14 +647,14 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_create_qr_advanced() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
         Attribute attribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(DIRECT_INPUT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute);
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute);
 
         IntegrationCreateQrAdvancedCommand command = IntegrationCreateQrAdvancedCommand.builder()
                 .name("This is a QR")
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .customId(rCustomId())
                 .description(rSentence(100))
                 .headerImageUrl(rImageFile().getFileUrl())
@@ -667,8 +667,8 @@ public class IntegrationControllerApiTest extends BaseApiTest {
 
         assertNotNull(qrResponse.getQrId());
         assertNotNull(qrResponse.getPlateId());
-        assertEquals(response.getAppId(), qrResponse.getAppId());
-        assertEquals(response.getDefaultGroupId(), qrResponse.getGroupId());
+        assertEquals(response.appId(), qrResponse.getAppId());
+        assertEquals(response.defaultGroupId(), qrResponse.getGroupId());
 
         QR qr = qrRepository.byId(qrResponse.getQrId());
         assertNotNull(qr);
@@ -685,65 +685,65 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_delete_qr() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
-        assertTrue(qrRepository.byIdOptional(response.getQrId()).isPresent());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
+        assertTrue(qrRepository.byIdOptional(response.qrId()).isPresent());
 
-        IntegrationApi.deleteQr(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), response.getQrId());
+        IntegrationApi.deleteQr(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), response.qrId());
 
-        assertFalse(qrRepository.byIdOptional(response.getQrId()).isPresent());
+        assertFalse(qrRepository.byIdOptional(response.qrId()).isPresent());
     }
 
     @Test
     public void should_deactivate_and_activate_qr() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
-        IntegrationApi.deactivateQr(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), response.getQrId());
-        assertFalse(qrRepository.byId(response.getQrId()).isActive());
+        IntegrationApi.deactivateQr(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), response.qrId());
+        assertFalse(qrRepository.byId(response.qrId()).isActive());
 
-        IntegrationApi.activateQr(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), response.getQrId());
-        assertTrue(qrRepository.byId(response.getQrId()).isActive());
+        IntegrationApi.activateQr(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), response.qrId());
+        assertTrue(qrRepository.byId(response.qrId()).isActive());
     }
 
     @Test
     public void should_deactivate_and_activate_qr_by_custom_id() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String customId = rCustomId();
         IntegrationCreateQrSimpleCommand createQrCommand = IntegrationCreateQrSimpleCommand.builder()
                 .name("This is a QR")
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .customId(customId)
                 .build();
         IntegrationCreateQrResponse qrResponse = IntegrationApi.createQrSimple(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), createQrCommand);
 
-        IntegrationApi.deactivateQrByCustomId(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), response.getAppId(), customId);
+        IntegrationApi.deactivateQrByCustomId(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), response.appId(), customId);
         assertFalse(qrRepository.byId(qrResponse.getQrId()).isActive());
 
-        IntegrationApi.activateQrByCustomId(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), response.getAppId(), customId);
-        assertTrue(qrRepository.byId(response.getQrId()).isActive());
+        IntegrationApi.activateQrByCustomId(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), response.appId(), customId);
+        assertTrue(qrRepository.byId(response.qrId()).isActive());
     }
 
     @Test
     public void should_delete_qr_by_custom_id() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateQrSimpleCommand createQrCommand = IntegrationCreateQrSimpleCommand.builder()
                 .name("This is a QR")
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .customId(rCustomId())
                 .build();
         IntegrationCreateQrResponse qrResponse = IntegrationApi.createQrSimple(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), createQrCommand);
         Optional<QR> qrOptional = qrRepository.byIdOptional(qrResponse.getQrId());
         assertTrue(qrOptional.isPresent());
 
-        IntegrationApi.deleteQrByCustomId(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), response.getAppId(), qrOptional.get().getCustomId());
+        IntegrationApi.deleteQrByCustomId(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), response.appId(), qrOptional.get().getCustomId());
 
         assertFalse(qrRepository.byIdOptional(qrResponse.getQrId()).isPresent());
     }
@@ -751,34 +751,34 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_rename_qr() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationApi.renameQr(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 IntegrationRenameQrCommand.builder().name("aQrName").build());
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         assertEquals("aQrName", qr.getName());
     }
 
     @Test
     public void should_rename_qr_by_custom_id() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateQrSimpleCommand createQrCommand = IntegrationCreateQrSimpleCommand.builder()
                 .name("This is a QR")
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .customId(rCustomId())
                 .build();
         IntegrationCreateQrResponse qrResponse = IntegrationApi.createQrSimple(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), createQrCommand);
 
         IntegrationApi.renameQrByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(),
+                response.appId(),
                 createQrCommand.getCustomId(),
                 IntegrationRenameQrCommand.builder().name("aQrName").build());
 
@@ -789,11 +789,11 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_update_qr_base_setting() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         Attribute attribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(DIRECT_INPUT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute);
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute);
         IntegrationUpdateQrBaseSettingCommand command = IntegrationUpdateQrBaseSettingCommand.builder()
                 .name(rQrName())
                 .description(rSentence(100))
@@ -805,11 +805,11 @@ public class IntegrationControllerApiTest extends BaseApiTest {
 
         IntegrationApi.updateQrBaseSetting(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 command
         );
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         assertEquals(command.getName(), qr.getName());
         assertEquals(command.getDescription(), qr.getDescription());
         assertEquals(command.getHeaderImageUrl(), qr.getHeaderImage().getFileUrl());
@@ -823,18 +823,18 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_update_qr_base_setting_by_custom_id() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateQrSimpleCommand createQrCommand = IntegrationCreateQrSimpleCommand.builder()
                 .name("This is a QR")
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .customId(rCustomId())
                 .build();
         IntegrationCreateQrResponse qrResponse = IntegrationApi.createQrSimple(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), createQrCommand);
 
         Attribute attribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(DIRECT_INPUT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute);
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute);
         IntegrationUpdateQrBaseSettingCommand command = IntegrationUpdateQrBaseSettingCommand.builder()
                 .name(rQrName())
                 .description(rSentence(100))
@@ -846,7 +846,7 @@ public class IntegrationControllerApiTest extends BaseApiTest {
 
         IntegrationApi.updateQrBaseSettingByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(),
+                response.appId(),
                 createQrCommand.getCustomId(),
                 command
         );
@@ -865,36 +865,36 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_update_qr_name() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationApi.updateQrDescription(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 IntegrationUpdateQrDescriptionCommand.builder().description("some description").build());
-        QrDescriptionUpdatedEvent event = domainEventDao.latestEventFor(response.getQrId(), QR_DESCRIPTION_UPDATED, QrDescriptionUpdatedEvent.class);
-        assertEquals(response.getQrId(), event.getQrId());
+        QrDescriptionUpdatedEvent event = domainEventDao.latestEventFor(response.qrId(), QR_DESCRIPTION_UPDATED, QrDescriptionUpdatedEvent.class);
+        assertEquals(response.qrId(), event.getQrId());
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         assertEquals("some description", qr.getDescription());
     }
 
     @Test
     public void should_update_qr_name_by_custom_id() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateQrSimpleCommand createQrCommand = IntegrationCreateQrSimpleCommand.builder()
                 .name("This is a QR")
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .customId(rCustomId())
                 .build();
         IntegrationCreateQrResponse qrResponse = IntegrationApi.createQrSimple(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), createQrCommand);
 
         IntegrationApi.updateQrDescriptionByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(),
+                response.appId(),
                 createQrCommand.getCustomId(),
                 IntegrationUpdateQrDescriptionCommand.builder().description("some description").build());
 
@@ -905,31 +905,31 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_update_qr_header_image() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String headerImageUrl = rUrl();
         IntegrationApi.updateQrHeaderImage(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 IntegrationUpdateQrHeaderImageCommand.builder().headerImageUrl(headerImageUrl).build());
 
-        QrHeaderImageUpdatedEvent event = domainEventDao.latestEventFor(response.getQrId(), QR_HEADER_IMAGE_UPDATED, QrHeaderImageUpdatedEvent.class);
-        assertEquals(response.getQrId(), event.getQrId());
+        QrHeaderImageUpdatedEvent event = domainEventDao.latestEventFor(response.qrId(), QR_HEADER_IMAGE_UPDATED, QrHeaderImageUpdatedEvent.class);
+        assertEquals(response.qrId(), event.getQrId());
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         assertEquals(headerImageUrl, qr.getHeaderImage().getFileUrl());
     }
 
     @Test
     public void should_update_qr_header_image_by_custom_id() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateQrSimpleCommand createQrCommand = IntegrationCreateQrSimpleCommand.builder()
                 .name("This is a QR")
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .customId(rCustomId())
                 .build();
         IntegrationCreateQrResponse qrResponse = IntegrationApi.createQrSimple(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), createQrCommand);
@@ -938,7 +938,7 @@ public class IntegrationControllerApiTest extends BaseApiTest {
         String headerImageUrl = rUrl();
         IntegrationApi.updateQrHeaderImageByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(),
+                response.appId(),
                 createQrCommand.getCustomId(),
                 IntegrationUpdateQrHeaderImageCommand.builder().headerImageUrl(headerImageUrl).build());
 
@@ -949,12 +949,12 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_update_qr_direct_attributes() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         Attribute attribute1 = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(DIRECT_INPUT).build();
         Attribute attribute2 = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(DIRECT_INPUT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute1, attribute2);
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute1, attribute2);
 
         IntegrationUpdateQrDirectAttributesCommand command = IntegrationUpdateQrDirectAttributesCommand.builder()
                 .directAttributeValues(Maps.of(attribute1.getId(), "hello1", attribute2.getId(), "hello2"))
@@ -962,39 +962,39 @@ public class IntegrationControllerApiTest extends BaseApiTest {
 
         IntegrationApi.updateQrDirectAttributes(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 command
         );
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         assertEquals("hello1", ((TextAttributeValue) qr.attributeValueOf(attribute1.getId())).getText());
         assertEquals("hello2", ((TextAttributeValue) qr.attributeValueOf(attribute2.getId())).getText());
 
         IntegrationApi.updateQrDirectAttributes(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 IntegrationUpdateQrDirectAttributesCommand.builder()
                         .directAttributeValues(Maps.of(attribute1.getId(), "hello11"))
                         .build()
         );
 
-        QR updatedQr = qrRepository.byId(response.getQrId());
+        QR updatedQr = qrRepository.byId(response.qrId());
         assertEquals("hello11", ((TextAttributeValue) updatedQr.attributeValueOf(attribute1.getId())).getText());
         assertEquals("hello2", ((TextAttributeValue) updatedQr.attributeValueOf(attribute2.getId())).getText());
-        QrAttributesUpdatedEvent event = domainEventDao.latestEventFor(response.getQrId(), QR_ATTRIBUTES_UPDATED, QrAttributesUpdatedEvent.class);
-        assertEquals(response.getQrId(), event.getQrId());
+        QrAttributesUpdatedEvent event = domainEventDao.latestEventFor(response.qrId(), QR_ATTRIBUTES_UPDATED, QrAttributesUpdatedEvent.class);
+        assertEquals(response.qrId(), event.getQrId());
 
         Map<String, String> map = newHashMap();
         map.put(attribute1.getId(), null);
         IntegrationApi.updateQrDirectAttributes(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 IntegrationUpdateQrDirectAttributesCommand.builder()
                         .directAttributeValues(map)
                         .build()
         );
 
-        QR finalQr = qrRepository.byId(response.getQrId());
+        QR finalQr = qrRepository.byId(response.qrId());
         assertNull(finalQr.attributeValueOf(attribute1.getId()));
         assertEquals("hello2", ((TextAttributeValue) finalQr.attributeValueOf(attribute2.getId())).getText());
     }
@@ -1002,16 +1002,16 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_update_qr_direct_attributes_by_custom_id() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         Attribute attribute1 = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(DIRECT_INPUT).build();
         Attribute attribute2 = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(DIRECT_INPUT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute1, attribute2);
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute1, attribute2);
 
         IntegrationCreateQrSimpleCommand createQrCommand = IntegrationCreateQrSimpleCommand.builder()
                 .name("This is a QR")
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .customId(rCustomId())
                 .build();
         IntegrationCreateQrResponse qrResponse = IntegrationApi.createQrSimple(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), createQrCommand);
@@ -1022,7 +1022,7 @@ public class IntegrationControllerApiTest extends BaseApiTest {
 
         IntegrationApi.updateQrDirectAttributesByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(),
+                response.appId(),
                 createQrCommand.getCustomId(),
                 command
         );
@@ -1035,32 +1035,32 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_update_qr_geolocation() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         Geolocation geolocation = rGeolocation();
         IntegrationApi.updateQrGeolocation(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 IntegrationUpdateQrGeolocationCommand.builder().geolocation(geolocation).build()
         );
 
-        QrGeolocationUpdatedEvent event = domainEventDao.latestEventFor(response.getQrId(), QR_GEOLOCATION_UPDATED, QrGeolocationUpdatedEvent.class);
-        assertEquals(response.getQrId(), event.getQrId());
+        QrGeolocationUpdatedEvent event = domainEventDao.latestEventFor(response.qrId(), QR_GEOLOCATION_UPDATED, QrGeolocationUpdatedEvent.class);
+        assertEquals(response.qrId(), event.getQrId());
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         assertEquals(geolocation, qr.getGeolocation());
     }
 
     @Test
     public void should_update_qr_geolocation_by_custom_id() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateQrSimpleCommand createQrCommand = IntegrationCreateQrSimpleCommand.builder()
                 .name("This is a QR")
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .customId(rCustomId())
                 .build();
         IntegrationCreateQrResponse qrResponse = IntegrationApi.createQrSimple(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), createQrCommand);
@@ -1069,7 +1069,7 @@ public class IntegrationControllerApiTest extends BaseApiTest {
 
         IntegrationApi.updateQrGeolocationByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(),
+                response.appId(),
                 createQrCommand.getCustomId(),
                 IntegrationUpdateQrGeolocationCommand.builder().geolocation(geolocation).build()
         );
@@ -1081,34 +1081,34 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_update_qr_custom_id() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationUpdateQrCustomIdCommand command = IntegrationUpdateQrCustomIdCommand.builder().customId(rCustomId()).build();
         IntegrationApi.updateQrCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 command
         );
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         assertEquals(command.getCustomId(), qr.getCustomId());
     }
 
     @Test
     public void should_fail_update_qr_custom_id_if_duplicated() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationUpdateQrCustomIdCommand command = IntegrationUpdateQrCustomIdCommand.builder().customId(rCustomId()).build();
         IntegrationApi.updateQrCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 command
         );
 
-        CreateQrResponse qrResponse = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qrResponse = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
         assertError(() -> IntegrationApi.updateQrCustomIdRaw(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
@@ -1122,17 +1122,17 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_raise_event_when_update_custom_id() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        String qrId = response.getQrId();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        String qrId = response.qrId();
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         Attribute instanceCustomIdAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(INSTANCE_CUSTOM_ID).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), instanceCustomIdAttribute);
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), instanceCustomIdAttribute);
 
         IntegrationUpdateQrCustomIdCommand command = IntegrationUpdateQrCustomIdCommand.builder().customId(rCustomId()).build();
         IntegrationApi.updateQrCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId(),
+                response.qrId(),
                 command
         );
 
@@ -1148,13 +1148,13 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_qr() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
         QIntegrationQr qIntegrationQr = IntegrationApi.fetchQr(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getQrId());
+                response.qrId());
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         assertEquals(qr.getId(), qIntegrationQr.getId());
         assertEquals(qr.getName(), qIntegrationQr.getName());
         assertEquals(qr.getPlateId(), qIntegrationQr.getPlateId());
@@ -1175,12 +1175,12 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_qr_by_custom_id() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateQrSimpleCommand createQrCommand = IntegrationCreateQrSimpleCommand.builder()
                 .name("This is a QR")
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .customId(rCustomId())
                 .build();
         IntegrationCreateQrResponse qrResponse = IntegrationApi.createQrSimple(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), createQrCommand);
@@ -1211,11 +1211,11 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_create_group() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateGroupCommand command = IntegrationCreateGroupCommand.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .name("aGroupName")
                 .customId(rCustomId())
                 .build();
@@ -1231,37 +1231,37 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_delete_group() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
-        String groupId = GroupApi.createGroup(response.getJwt(), response.getAppId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
+        String groupId = GroupApi.createGroup(response.jwt(), response.appId());
 
         assertTrue(groupRepository.byIdOptional(groupId).isPresent());
-        assertTrue(groupHierarchyRepository.byAppId(response.getAppId()).containsGroupId(groupId));
+        assertTrue(groupHierarchyRepository.byAppId(response.appId()).containsGroupId(groupId));
 
         IntegrationApi.deleteGroup(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), groupId);
         assertFalse(groupRepository.byIdOptional(groupId).isPresent());
-        assertFalse(groupHierarchyRepository.byAppId(response.getAppId()).containsGroupId(groupId));
+        assertFalse(groupHierarchyRepository.byAppId(response.appId()).containsGroupId(groupId));
     }
 
     @Test
     public void delete_group_should_also_delete_sub_groups() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
-        String groupId = GroupApi.createGroup(response.getJwt(), CreateGroupCommand.builder()
-                .parentGroupId(response.getDefaultGroupId())
-                .appId(response.getAppId())
+        String groupId = GroupApi.createGroup(response.jwt(), CreateGroupCommand.builder()
+                .parentGroupId(response.defaultGroupId())
+                .appId(response.appId())
                 .name(rGroupName()).build());
 
-        String groupId2 = GroupApi.createGroup(response.getJwt(), CreateGroupCommand.builder()
+        String groupId2 = GroupApi.createGroup(response.jwt(), CreateGroupCommand.builder()
                 .parentGroupId(groupId)
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .name(rGroupName()).build());
 
         IntegrationApi.deleteGroup(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret(), groupId);
         assertFalse(groupRepository.exists(groupId2));
-        IdTreeHierarchy hierarchy = groupHierarchyRepository.byAppId(response.getAppId()).getHierarchy();
+        IdTreeHierarchy hierarchy = groupHierarchyRepository.byAppId(response.appId()).getHierarchy();
         assertFalse(hierarchy.allIds().contains(groupId));
         assertFalse(hierarchy.allIds().contains(groupId2));
     }
@@ -1269,21 +1269,21 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_delete_group_by_custom_id() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String customId = rCustomId();
         String groupId = IntegrationApi.createGroup(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
                 IntegrationCreateGroupCommand.builder()
-                        .appId(response.getAppId())
+                        .appId(response.appId())
                         .name("aGroupName")
                         .customId(customId)
                         .build());
 
         IntegrationApi.deleteGroupByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(),
+                response.appId(),
                 customId);
 
         assertFalse(groupRepository.byIdOptional(groupId).isPresent());
@@ -1292,39 +1292,39 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fail_delete_group_if_only_one_visible_group_left() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         assertError(() -> IntegrationApi.deleteGroupRaw(tenant.getApiSetting().getApiKey(),
-                tenant.getApiSetting().getApiSecret(), response.getDefaultGroupId()), NO_MORE_THAN_ONE_VISIBLE_GROUP_LEFT);
+                tenant.getApiSetting().getApiSecret(), response.defaultGroupId()), NO_MORE_THAN_ONE_VISIBLE_GROUP_LEFT);
     }
 
     @Test
     public void should_rename_group() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationApi.renameGroup(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getDefaultGroupId(),
+                response.defaultGroupId(),
                 IntegrationRenameGroupCommand.builder().name("aGroupName").build());
 
-        Group group = groupRepository.byId(response.getDefaultGroupId());
+        Group group = groupRepository.byId(response.defaultGroupId());
         assertEquals("aGroupName", group.getName());
     }
 
     @Test
     public void should_rename_group_by_custom_id() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String customId = rCustomId();
         String groupId = IntegrationApi.createGroup(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
                 IntegrationCreateGroupCommand.builder()
-                        .appId(response.getAppId())
+                        .appId(response.appId())
                         .name("aGroupName")
                         .customId(customId)
                         .build());
@@ -1332,7 +1332,7 @@ public class IntegrationControllerApiTest extends BaseApiTest {
         IntegrationRenameGroupCommand command = IntegrationRenameGroupCommand.builder().name(rGroupName()).build();
         IntegrationApi.renameGroupByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(),
+                response.appId(),
                 customId,
                 command);
 
@@ -1343,36 +1343,36 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_update_group_custom_id() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationUpdateGroupCustomIdCommand command = IntegrationUpdateGroupCustomIdCommand.builder().customId(rCustomId()).build();
         IntegrationApi.updateGroupCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getDefaultGroupId(),
+                response.defaultGroupId(),
                 command);
-        Group group = groupRepository.byId(response.getDefaultGroupId());
+        Group group = groupRepository.byId(response.defaultGroupId());
         assertEquals(command.getCustomId(), group.getCustomId());
     }
 
     @Test
     public void should_fail_update_group_custom_id_if_duplicated() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String customId = rCustomId();
         IntegrationApi.createGroup(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
                 IntegrationCreateGroupCommand.builder()
-                        .appId(response.getAppId())
+                        .appId(response.appId())
                         .name("aGroupName")
                         .customId(customId)
                         .build());
         IntegrationUpdateGroupCustomIdCommand command = IntegrationUpdateGroupCustomIdCommand.builder().customId(customId).build();
         assertError(() -> IntegrationApi.updateGroupCustomIdRaw(tenant.getApiSetting().getApiKey(),
                         tenant.getApiSetting().getApiSecret(),
-                        response.getDefaultGroupId(),
+                        response.defaultGroupId(),
                         command)
                 , GROUP_WITH_CUSTOM_ID_ALREADY_EXISTS);
     }
@@ -1380,13 +1380,13 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_archive_group() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String groupId = IntegrationApi.createGroup(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
                 IntegrationCreateGroupCommand.builder()
-                        .appId(response.getAppId())
+                        .appId(response.appId())
                         .name("aGroupName")
                         .customId(rCustomId())
                         .build());
@@ -1402,12 +1402,12 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void archive_and_unarchive_group_should_also_do_it_for_sub_groups() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
-        String groupId1 = GroupApi.createGroup(response.getJwt(), CreateGroupCommand.builder().name(rGroupName()).appId(response.getAppId()).parentGroupId(response.getDefaultGroupId()).build());
-        String groupId2 = GroupApi.createGroup(response.getJwt(), CreateGroupCommand.builder().name(rGroupName()).appId(response.getAppId()).parentGroupId(groupId1).build());
-        String groupId3 = GroupApi.createGroup(response.getJwt(), CreateGroupCommand.builder().name(rGroupName()).appId(response.getAppId()).parentGroupId(groupId2).build());
+        String groupId1 = GroupApi.createGroup(response.jwt(), CreateGroupCommand.builder().name(rGroupName()).appId(response.appId()).parentGroupId(response.defaultGroupId()).build());
+        String groupId2 = GroupApi.createGroup(response.jwt(), CreateGroupCommand.builder().name(rGroupName()).appId(response.appId()).parentGroupId(groupId1).build());
+        String groupId3 = GroupApi.createGroup(response.jwt(), CreateGroupCommand.builder().name(rGroupName()).appId(response.appId()).parentGroupId(groupId2).build());
 
         IntegrationApi.archiveGroup(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
@@ -1427,21 +1427,21 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_archive_group_by_custom_id() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String customId = rCustomId();
         String groupId = IntegrationApi.createGroup(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
                 IntegrationCreateGroupCommand.builder()
-                        .appId(response.getAppId())
+                        .appId(response.appId())
                         .name("aGroupName")
                         .customId(customId)
                         .build());
 
         IntegrationApi.archiveGroupByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(), customId);
+                response.appId(), customId);
 
         Group group = groupRepository.byId(groupId);
         assertTrue(group.isArchived());
@@ -1450,13 +1450,13 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_unarchive_group() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String groupId = IntegrationApi.createGroup(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
                 IntegrationCreateGroupCommand.builder()
-                        .appId(response.getAppId())
+                        .appId(response.appId())
                         .name("aGroupName")
                         .customId(rCustomId())
                         .build());
@@ -1475,39 +1475,39 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_unarchive_group_by_custom_id() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String customId = rCustomId();
         String groupId = IntegrationApi.createGroup(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
                 IntegrationCreateGroupCommand.builder()
-                        .appId(response.getAppId())
+                        .appId(response.appId())
                         .name("aGroupName")
                         .customId(customId)
                         .build());
 
         IntegrationApi.archiveGroupByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(), customId);
+                response.appId(), customId);
         assertTrue(groupRepository.byId(groupId).isArchived());
 
         IntegrationApi.unArchiveGroupByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(), customId);
+                response.appId(), customId);
         assertFalse(groupRepository.byId(groupId).isArchived());
     }
 
     @Test
     public void should_deactivate_and_activate_group() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String groupId = IntegrationApi.createGroup(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
                 IntegrationCreateGroupCommand.builder()
-                        .appId(response.getAppId())
+                        .appId(response.appId())
                         .name("aGroupName")
                         .customId(rCustomId())
                         .build());
@@ -1527,12 +1527,12 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void deactivate_and_activate_group_should_also_do_it_for_sub_groups() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
-        String groupId1 = GroupApi.createGroup(response.getJwt(), CreateGroupCommand.builder().name(rGroupName()).appId(response.getAppId()).parentGroupId(response.getDefaultGroupId()).build());
-        String groupId2 = GroupApi.createGroup(response.getJwt(), CreateGroupCommand.builder().name(rGroupName()).appId(response.getAppId()).parentGroupId(groupId1).build());
-        String groupId3 = GroupApi.createGroup(response.getJwt(), CreateGroupCommand.builder().name(rGroupName()).appId(response.getAppId()).parentGroupId(groupId2).build());
+        String groupId1 = GroupApi.createGroup(response.jwt(), CreateGroupCommand.builder().name(rGroupName()).appId(response.appId()).parentGroupId(response.defaultGroupId()).build());
+        String groupId2 = GroupApi.createGroup(response.jwt(), CreateGroupCommand.builder().name(rGroupName()).appId(response.appId()).parentGroupId(groupId1).build());
+        String groupId3 = GroupApi.createGroup(response.jwt(), CreateGroupCommand.builder().name(rGroupName()).appId(response.appId()).parentGroupId(groupId2).build());
 
         IntegrationApi.deactivateGroup(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
@@ -1552,13 +1552,13 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fail_deactivate_if_only_one_active_group_left() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
-        String anotherGroupId = GroupApi.createGroup(response.getJwt(), response.getAppId());
+        String anotherGroupId = GroupApi.createGroup(response.jwt(), response.appId());
         IntegrationApi.deactivateGroup(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getDefaultGroupId());
+                response.defaultGroupId());
 
         assertError(() -> IntegrationApi.deactivateGroupRaw(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(), anotherGroupId), NO_MORE_THAN_ONE_VISIBLE_GROUP_LEFT);
@@ -1567,59 +1567,59 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_deactivate_and_activate_group_by_custom_id() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String customId = rCustomId();
         String groupId = IntegrationApi.createGroup(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
                 IntegrationCreateGroupCommand.builder()
-                        .appId(response.getAppId())
+                        .appId(response.appId())
                         .name("aGroupName")
                         .customId(customId)
                         .build());
 
         IntegrationApi.deactivationGroupByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(), customId);
+                response.appId(), customId);
         assertFalse(groupRepository.byId(groupId).isActive());
 
         IntegrationApi.activationGroupByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(), customId);
+                response.appId(), customId);
         assertTrue(groupRepository.byId(groupId).isActive());
     }
 
     @Test
     public void should_add_managers_to_group() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
-        String memberId = MemberApi.createMember(response.getJwt());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
+        String memberId = MemberApi.createMember(response.jwt());
 
         IntegrationApi.addGroupManagers(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getDefaultGroupId(),
+                response.defaultGroupId(),
                 IntegrationAddGroupManagersCommand.builder().memberIds(of(memberId)).build());
 
-        assertNotNull(domainEventDao.latestEventFor(response.getDefaultGroupId(), GROUP_MANAGERS_CHANGED, GroupManagersChangedEvent.class));
-        Group group = groupRepository.byId(response.getDefaultGroupId());
+        assertNotNull(domainEventDao.latestEventFor(response.defaultGroupId(), GROUP_MANAGERS_CHANGED, GroupManagersChangedEvent.class));
+        Group group = groupRepository.byId(response.defaultGroupId());
         assertTrue(group.getManagers().contains(memberId));
     }
 
     @Test
     public void add_group_manager_should_also_add_as_group_member() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
-        String memberId = MemberApi.createMember(response.getJwt());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
+        String memberId = MemberApi.createMember(response.jwt());
 
         IntegrationApi.addGroupManagers(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getDefaultGroupId(),
+                response.defaultGroupId(),
                 IntegrationAddGroupManagersCommand.builder().memberIds(of(memberId)).build());
 
-        Group group = groupRepository.byId(response.getDefaultGroupId());
+        Group group = groupRepository.byId(response.defaultGroupId());
         assertTrue(group.getManagers().contains(memberId));
         assertTrue(group.getMembers().contains(memberId));
     }
@@ -1627,33 +1627,33 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fail_add_managers_if_size_exceed_limit() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         List<String> memberIds = IntStream.range(1, 7)
-                .mapToObj(value -> MemberApi.createMember(response.getJwt())).collect(toList());
+                .mapToObj(value -> MemberApi.createMember(response.jwt())).collect(toList());
         IntegrationApi.addGroupManagers(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getDefaultGroupId(),
+                response.defaultGroupId(),
                 IntegrationAddGroupManagersCommand.builder().memberIds(memberIds).build());
 
         List<String> moreMemberIds = IntStream.range(1, 7)
-                .mapToObj(value -> MemberApi.createMember(response.getJwt())).collect(toList());
+                .mapToObj(value -> MemberApi.createMember(response.jwt())).collect(toList());
 
         assertError(() -> IntegrationApi.addGroupManagersRaw(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getDefaultGroupId(),
+                response.defaultGroupId(),
                 IntegrationAddGroupManagersCommand.builder().memberIds(moreMemberIds).build()), MAX_GROUP_MANAGER_REACHED);
     }
 
     @Test
     public void should_add_managers_to_group_by_custom_id() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateGroupCommand createGroupCommand = IntegrationCreateGroupCommand.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .name("aGroupName")
                 .customId(rCustomId())
                 .build();
@@ -1675,7 +1675,7 @@ public class IntegrationControllerApiTest extends BaseApiTest {
 
         IntegrationApi.addGroupManagersByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(), createGroupCommand.getCustomId(),
+                response.appId(), createGroupCommand.getCustomId(),
                 IntegrationCustomAddGroupManagersCommand.builder()
                         .memberCustomIds(newArrayList(memberCustomId))
                         .build());
@@ -1687,32 +1687,32 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_remove_group_managers() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
-        String memberId = MemberApi.createMember(response.getJwt());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
+        String memberId = MemberApi.createMember(response.jwt());
 
         IntegrationApi.addGroupManagers(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getDefaultGroupId(),
+                response.defaultGroupId(),
                 IntegrationAddGroupManagersCommand.builder().memberIds(of(memberId)).build());
-        assertTrue(groupRepository.byId(response.getDefaultGroupId()).getManagers().contains(memberId));
+        assertTrue(groupRepository.byId(response.defaultGroupId()).getManagers().contains(memberId));
 
         IntegrationApi.removeGroupManagers(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getDefaultGroupId(),
+                response.defaultGroupId(),
                 IntegrationRemoveGroupManagersCommand.builder().memberIds(List.of(memberId)).build());
-        assertFalse(groupRepository.byId(response.getDefaultGroupId()).getManagers().contains(memberId));
-        assertNotNull(domainEventDao.latestEventFor(response.getDefaultGroupId(), GROUP_MANAGERS_CHANGED, GroupManagersChangedEvent.class));
+        assertFalse(groupRepository.byId(response.defaultGroupId()).getManagers().contains(memberId));
+        assertNotNull(domainEventDao.latestEventFor(response.defaultGroupId(), GROUP_MANAGERS_CHANGED, GroupManagersChangedEvent.class));
     }
 
     @Test
     public void should_remove_group_managers_by_custom_id() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateGroupCommand createGroupCommand = IntegrationCreateGroupCommand.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .name("aGroupName")
                 .customId(rCustomId())
                 .build();
@@ -1734,7 +1734,7 @@ public class IntegrationControllerApiTest extends BaseApiTest {
 
         IntegrationApi.addGroupManagersByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(), createGroupCommand.getCustomId(),
+                response.appId(), createGroupCommand.getCustomId(),
                 IntegrationCustomAddGroupManagersCommand.builder()
                         .memberCustomIds(newArrayList(memberCustomId))
                         .build());
@@ -1742,7 +1742,7 @@ public class IntegrationControllerApiTest extends BaseApiTest {
         assertTrue(groupRepository.byId(groupId).getManagers().contains(memberId));
 
         IntegrationApi.removeGroupManagersByCustomId(tenant.getApiSetting().getApiKey(),
-                tenant.getApiSetting().getApiSecret(), response.getAppId(),
+                tenant.getApiSetting().getApiSecret(), response.appId(),
                 createGroupCommand.getCustomId(),
                 IntegrationCustomRemoveGroupManagersCommand.builder().memberCustomIds(List.of(memberCustomId)).build());
 
@@ -1753,27 +1753,27 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_add_common_members_to_group() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
-        String memberId = MemberApi.createMember(response.getJwt());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
+        String memberId = MemberApi.createMember(response.jwt());
 
         IntegrationApi.addGroupMembers(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getDefaultGroupId(),
+                response.defaultGroupId(),
                 IntegrationAddGroupMembersCommand.builder().memberIds(of(memberId)).build());
 
-        Group group = groupRepository.byId(response.getDefaultGroupId());
+        Group group = groupRepository.byId(response.defaultGroupId());
         assertTrue(group.getMembers().contains(memberId));
     }
 
     @Test
     public void should_add_members_to_group_by_custom_id() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateGroupCommand createGroupCommand = IntegrationCreateGroupCommand.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .name("aGroupName")
                 .customId(rCustomId())
                 .build();
@@ -1796,7 +1796,7 @@ public class IntegrationControllerApiTest extends BaseApiTest {
 
         IntegrationApi.addGroupMembersByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(), createGroupCommand.getCustomId(),
+                response.appId(), createGroupCommand.getCustomId(),
                 IntegrationCustomAddGroupMembersCommand.builder()
                         .memberCustomIds(newArrayList(memberCustomId))
                         .build());
@@ -1808,58 +1808,58 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_remove_group_members() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
-        String memberId = MemberApi.createMember(response.getJwt());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
+        String memberId = MemberApi.createMember(response.jwt());
 
         IntegrationApi.addGroupMembers(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getDefaultGroupId(),
+                response.defaultGroupId(),
                 IntegrationAddGroupMembersCommand.builder().memberIds(of(memberId)).build());
-        assertTrue(groupRepository.byId(response.getDefaultGroupId()).getMembers().contains(memberId));
+        assertTrue(groupRepository.byId(response.defaultGroupId()).getMembers().contains(memberId));
 
         IntegrationApi.removeGroupMembers(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getDefaultGroupId(),
+                response.defaultGroupId(),
                 IntegrationRemoveGroupMembersCommand.builder().memberIds(List.of(memberId)).build());
-        assertFalse(groupRepository.byId(response.getDefaultGroupId()).getMembers().contains(memberId));
+        assertFalse(groupRepository.byId(response.defaultGroupId()).getMembers().contains(memberId));
     }
 
     @Test
     public void remove_group_members_should_also_remove_managers() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
-        String memberId = MemberApi.createMember(response.getJwt());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
+        String memberId = MemberApi.createMember(response.jwt());
         IntegrationApi.addGroupManagers(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getDefaultGroupId(),
+                response.defaultGroupId(),
                 IntegrationAddGroupManagersCommand.builder().memberIds(of(memberId)).build());
 
-        Group group = groupRepository.byId(response.getDefaultGroupId());
+        Group group = groupRepository.byId(response.defaultGroupId());
         assertTrue(group.getManagers().contains(memberId));
         assertTrue(group.getMembers().contains(memberId));
 
         IntegrationApi.removeGroupMembers(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getDefaultGroupId(),
+                response.defaultGroupId(),
                 IntegrationRemoveGroupMembersCommand.builder().memberIds(List.of(memberId)).build());
 
-        Group updatedGroup = groupRepository.byId(response.getDefaultGroupId());
+        Group updatedGroup = groupRepository.byId(response.defaultGroupId());
         assertFalse(updatedGroup.getManagers().contains(memberId));
         assertFalse(updatedGroup.getMembers().contains(memberId));
-        GroupManagersChangedEvent event = domainEventDao.latestEventFor(response.getDefaultGroupId(), GROUP_MANAGERS_CHANGED, GroupManagersChangedEvent.class);
-        assertEquals(response.getDefaultGroupId(), event.getGroupId());
+        GroupManagersChangedEvent event = domainEventDao.latestEventFor(response.defaultGroupId(), GROUP_MANAGERS_CHANGED, GroupManagersChangedEvent.class);
+        assertEquals(response.defaultGroupId(), event.getGroupId());
     }
 
     @Test
     public void should_remove_group_members_by_group_custom_id() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateGroupCommand createGroupCommand = IntegrationCreateGroupCommand.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .name("aGroupName")
                 .customId(rCustomId())
                 .build();
@@ -1881,7 +1881,7 @@ public class IntegrationControllerApiTest extends BaseApiTest {
 
         IntegrationApi.addGroupMembersByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(), createGroupCommand.getCustomId(),
+                response.appId(), createGroupCommand.getCustomId(),
                 IntegrationCustomAddGroupMembersCommand.builder()
                         .memberCustomIds(newArrayList(memberCustomId))
                         .build());
@@ -1889,7 +1889,7 @@ public class IntegrationControllerApiTest extends BaseApiTest {
         assertTrue(groupRepository.byId(groupId).getMembers().contains(memberId));
 
         IntegrationApi.removeGroupMembersByCustomId(tenant.getApiSetting().getApiKey(),
-                tenant.getApiSetting().getApiSecret(), response.getAppId(),
+                tenant.getApiSetting().getApiSecret(), response.appId(),
                 createGroupCommand.getCustomId(),
                 IntegrationCustomRemoveGroupMembersCommand.builder().memberCustomIds(List.of(memberCustomId)).build());
 
@@ -1899,14 +1899,14 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_group() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         QIntegrationGroup qIntegrationGroup = IntegrationApi.fetchGroup(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getDefaultGroupId());
+                response.defaultGroupId());
 
-        Group group = groupRepository.byId(response.getDefaultGroupId());
+        Group group = groupRepository.byId(response.defaultGroupId());
 
         assertEquals(group.getId(), qIntegrationGroup.getId());
         assertEquals(group.getName(), qIntegrationGroup.getName());
@@ -1922,21 +1922,21 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_group_by_custom_id() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String customId = rCustomId();
         String groupId = IntegrationApi.createGroup(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
                 IntegrationCreateGroupCommand.builder()
-                        .appId(response.getAppId())
+                        .appId(response.appId())
                         .name("aGroupName")
                         .customId(customId)
                         .build());
 
         QIntegrationGroup qIntegrationGroup = IntegrationApi.fetchGroupByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId(), customId);
+                response.appId(), customId);
 
         Group group = groupRepository.byId(groupId);
 
@@ -1954,12 +1954,12 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_list_app_groups() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         List<QIntegrationListGroup> list = IntegrationApi.listGroups(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getAppId()
+                response.appId()
         );
 
         assertEquals(1, list.size());
@@ -1977,8 +1977,8 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_create_member() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateMemberCommand command = IntegrationCreateMemberCommand.builder()
                 .name(rMemberName())
@@ -2001,8 +2001,8 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fail_create_member_if_custom_id_already_exists() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String customId = rCustomId();
         IntegrationApi.createMember(tenant.getApiSetting().getApiKey(),
@@ -2047,17 +2047,17 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fail_update_member_custom_id_if_duplicated() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationUpdateMemberCustomIdCommand command = IntegrationUpdateMemberCustomIdCommand.builder().customId(rCustomId()).build();
         IntegrationApi.updateMemberCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
-                response.getMemberId(),
+                response.memberId(),
                 command
         );
 
-        String memberId = MemberApi.createMember(response.getJwt());
+        String memberId = MemberApi.createMember(response.jwt());
         assertError(() -> IntegrationApi.updateMemberCustomIdRaw(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(),
                 memberId,
@@ -2068,10 +2068,10 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_delete_member() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
-        String memberId = MemberApi.createMember(response.getJwt());
+        String memberId = MemberApi.createMember(response.jwt());
 
         assertTrue(memberRepository.byIdOptional(memberId).isPresent());
 
@@ -2084,18 +2084,18 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fail_delete_member_if_no_tenant_admin_left() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         assertError(() -> IntegrationApi.deleteMemberRaw(tenant.getApiSetting().getApiKey(),
-                tenant.getApiSetting().getApiSecret(), response.getMemberId()), NO_ACTIVE_TENANT_ADMIN_LEFT);
+                tenant.getApiSetting().getApiSecret(), response.memberId()), NO_ACTIVE_TENANT_ADMIN_LEFT);
     }
 
     @Test
     public void should_delete_member_by_custom_id() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateMemberCommand createMemberCommand = IntegrationCreateMemberCommand.builder()
                 .name(rMemberName())
@@ -2119,8 +2119,8 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_update_member_info() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationUpdateMemberInfoCommand command = IntegrationUpdateMemberInfoCommand.builder()
                 .name(rMemberName())
@@ -2129,9 +2129,9 @@ public class IntegrationControllerApiTest extends BaseApiTest {
                 .build();
 
         IntegrationApi.updateMemberInfo(tenant.getApiSetting().getApiKey(),
-                tenant.getApiSetting().getApiSecret(), response.getMemberId(), command);
+                tenant.getApiSetting().getApiSecret(), response.memberId(), command);
 
-        Member member = memberRepository.byId(response.getMemberId());
+        Member member = memberRepository.byId(response.memberId());
         assertEquals(command.getName(), member.getName());
         assertEquals(command.getEmail(), member.getEmail());
         assertEquals(command.getMobile(), member.getMobile());
@@ -2140,8 +2140,8 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_update_member_info_by_custom_id() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateMemberCommand createMemberCommand = IntegrationCreateMemberCommand.builder()
                 .name(rMemberName())
@@ -2173,9 +2173,9 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_deactivate_and_activate_member() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
-        String memberId = MemberApi.createMember(response.getJwt());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
+        String memberId = MemberApi.createMember(response.jwt());
 
         IntegrationApi.deactivateMember(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(), memberId);
@@ -2189,9 +2189,9 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_deactivate_and_activate_member_by_custom_id() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
-        String memberId = MemberApi.createMember(response.getJwt());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
+        String memberId = MemberApi.createMember(response.jwt());
         String customId = rCustomId();
         IntegrationApi.updateMemberCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(), memberId,
@@ -2209,8 +2209,8 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_member() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateMemberCommand createMemberCommand = IntegrationCreateMemberCommand.builder()
                 .name(rMemberName())
@@ -2243,8 +2243,8 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_member_by_custom_id() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateMemberCommand createMemberCommand = IntegrationCreateMemberCommand.builder()
                 .name(rMemberName())
@@ -2275,14 +2275,14 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_list_members() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         List<QIntegrationListMember> members = IntegrationApi.listMembers(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret());
         assertEquals(1, members.size());
         QIntegrationListMember listMember = members.get(0);
-        Member member = memberRepository.byId(response.getMemberId());
+        Member member = memberRepository.byId(response.memberId());
         assertEquals(member.getId(), listMember.getId());
         assertEquals(member.getName(), listMember.getName());
         assertEquals(member.getRole(), listMember.getRole());
@@ -2295,8 +2295,8 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_create_department() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateDepartmentCommand command = IntegrationCreateDepartmentCommand.builder().name(rDepartmentName()).customId(rCustomId()).build();
         String departmentId = IntegrationApi.createDepartment(tenant.getApiSetting().getApiKey(),
@@ -2304,7 +2304,7 @@ public class IntegrationControllerApiTest extends BaseApiTest {
 
         Department department = departmentRepository.byId(departmentId);
         assertEquals(department.getId(), departmentId);
-        DepartmentHierarchy hierarchy = departmentHierarchyRepository.byTenantId(response.getTenantId());
+        DepartmentHierarchy hierarchy = departmentHierarchyRepository.byTenantId(response.tenantId());
         assertTrue(hierarchy.containsDepartmentId(department.getId()));
         assertEquals(command.getCustomId(), department.getCustomId());
     }
@@ -2312,8 +2312,8 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_update_department_custom_id() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         IntegrationCreateDepartmentCommand command = IntegrationCreateDepartmentCommand.builder().name(rDepartmentName()).customId(rCustomId()).build();
         String departmentId = IntegrationApi.createDepartment(tenant.getApiSetting().getApiKey(),
@@ -2330,11 +2330,11 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_add_department_member() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
-        String memberId = MemberApi.createMember(response.getJwt());
-        String departmentId = DepartmentApi.createDepartment(response.getJwt(), rDepartmentName());
+        String memberId = MemberApi.createMember(response.jwt());
+        String departmentId = DepartmentApi.createDepartment(response.jwt(), rDepartmentName());
 
         IntegrationApi.addDepartmentMember(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(), departmentId, memberId);
@@ -2350,8 +2350,8 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_add_department_member_by_custom_id() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String customMemberId = rCustomId();
         String memberId = IntegrationApi.createMember(tenant.getApiSetting().getApiKey(),
@@ -2386,11 +2386,11 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_remove_member_from_department() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
-        String memberId = MemberApi.createMember(response.getJwt());
-        String departmentId = DepartmentApi.createDepartment(response.getJwt(), rDepartmentName());
+        String memberId = MemberApi.createMember(response.jwt());
+        String departmentId = DepartmentApi.createDepartment(response.jwt(), rDepartmentName());
 
         IntegrationApi.addDepartmentMember(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(), departmentId, memberId);
@@ -2409,8 +2409,8 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_remove_department_member_by_custom_id() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String customMemberId = rCustomId();
         String memberId = IntegrationApi.createMember(tenant.getApiSetting().getApiKey(),
@@ -2447,11 +2447,11 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_add_manager_to_department() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
-        String memberId = MemberApi.createMember(response.getJwt());
-        String departmentId = DepartmentApi.createDepartment(response.getJwt(), rDepartmentName());
+        String memberId = MemberApi.createMember(response.jwt());
+        String departmentId = DepartmentApi.createDepartment(response.jwt(), rDepartmentName());
 
         IntegrationApi.addDepartmentMember(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(), departmentId, memberId);
@@ -2471,11 +2471,11 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fail_add_department_manager_if_not_member() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
-        String memberId = MemberApi.createMember(response.getJwt());
-        String departmentId = DepartmentApi.createDepartment(response.getJwt(), rDepartmentName());
+        String memberId = MemberApi.createMember(response.jwt());
+        String departmentId = DepartmentApi.createDepartment(response.jwt(), rDepartmentName());
 
         assertError(() -> IntegrationApi.addDepartmentManagerRaw(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(), departmentId, memberId), NOT_DEPARTMENT_MEMBER);
@@ -2484,8 +2484,8 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_add_department_manager_by_custom_id() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String customMemberId = rCustomId();
         String memberId = IntegrationApi.createMember(tenant.getApiSetting().getApiKey(),
@@ -2524,11 +2524,11 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_remove_manager_from_department() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
-        String memberId = MemberApi.createMember(response.getJwt());
-        String departmentId = DepartmentApi.createDepartment(response.getJwt(), rDepartmentName());
+        String memberId = MemberApi.createMember(response.jwt());
+        String departmentId = DepartmentApi.createDepartment(response.jwt(), rDepartmentName());
 
         IntegrationApi.addDepartmentMember(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(), departmentId, memberId);
@@ -2553,8 +2553,8 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_remove_department_manager_by_custom_id() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String customMemberId = rCustomId();
         String memberId = IntegrationApi.createMember(tenant.getApiSetting().getApiKey(),
@@ -2596,28 +2596,28 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_delete_department() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
-        String departmentId = DepartmentApi.createDepartment(response.getJwt(), rDepartmentName());
-        assertTrue(departmentHierarchyRepository.byTenantId(response.getTenantId()).containsDepartmentId(departmentId));
+        String departmentId = DepartmentApi.createDepartment(response.jwt(), rDepartmentName());
+        assertTrue(departmentHierarchyRepository.byTenantId(response.tenantId()).containsDepartmentId(departmentId));
         assertTrue(departmentRepository.exists(departmentId));
 
         IntegrationApi.deleteDepartment(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(), departmentId);
 
         assertFalse(departmentRepository.exists(departmentId));
-        assertFalse(departmentHierarchyRepository.byTenantId(response.getTenantId()).containsDepartmentId(departmentId));
+        assertFalse(departmentHierarchyRepository.byTenantId(response.tenantId()).containsDepartmentId(departmentId));
     }
 
     @Test
     public void delete_department_should_also_delete_sub_departments() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
-        String departmentId = DepartmentApi.createDepartment(response.getJwt(), rDepartmentName());
-        String subDepartmentId = DepartmentApi.createDepartmentWithParent(response.getJwt(), departmentId, rDepartmentName());
+        String departmentId = DepartmentApi.createDepartment(response.jwt(), rDepartmentName());
+        String subDepartmentId = DepartmentApi.createDepartmentWithParent(response.jwt(), departmentId, rDepartmentName());
 
         IntegrationApi.deleteDepartment(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(), departmentId);
@@ -2628,8 +2628,8 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_delete_department_by_custom_id() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String departmentCustomId = rCustomId();
         String departmentId = IntegrationApi.createDepartment(tenant.getApiSetting().getApiKey(),
@@ -2648,11 +2648,11 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_list_departments() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         String name = rDepartmentName();
-        String departmentId = DepartmentApi.createDepartment(response.getJwt(), name);
+        String departmentId = DepartmentApi.createDepartment(response.jwt(), name);
         IntegrationUpdateDepartmentCustomIdCommand updateCommand = IntegrationUpdateDepartmentCustomIdCommand.builder().customId(rCustomId()).build();
         IntegrationApi.updateDepartmentCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(), departmentId, updateCommand);
@@ -2668,11 +2668,11 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_department() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
-        String memberId = MemberApi.createMember(response.getJwt(), rMemberName(), rMobile(), rPassword());
-        String departmentId = DepartmentApi.createDepartment(response.getJwt(), CreateDepartmentCommand.builder().name(rDepartmentName()).build());
+        String memberId = MemberApi.createMember(response.jwt(), rMemberName(), rMobile(), rPassword());
+        String departmentId = DepartmentApi.createDepartment(response.jwt(), CreateDepartmentCommand.builder().name(rDepartmentName()).build());
         IntegrationUpdateDepartmentCustomIdCommand updateCommand = IntegrationUpdateDepartmentCustomIdCommand.builder().customId(rCustomId()).build();
         IntegrationApi.updateDepartmentCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(), departmentId, updateCommand);
@@ -2683,8 +2683,8 @@ public class IntegrationControllerApiTest extends BaseApiTest {
                 .departmentIds(List.of(departmentId))
                 .build();
 
-        MemberApi.updateMember(response.getJwt(), memberId, command);
-        DepartmentApi.addDepartmentManager(response.getJwt(), departmentId, memberId);
+        MemberApi.updateMember(response.jwt(), memberId, command);
+        DepartmentApi.addDepartmentManager(response.jwt(), departmentId, memberId);
 
         QIntegrationDepartment qDepartment = IntegrationApi.fetchDepartment(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(), departmentId);
@@ -2701,11 +2701,11 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_department_by_custom_id() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
-        String memberId = MemberApi.createMember(response.getJwt(), rMemberName(), rMobile(), rPassword());
-        String departmentId = DepartmentApi.createDepartment(response.getJwt(), CreateDepartmentCommand.builder().name(rDepartmentName()).build());
+        String memberId = MemberApi.createMember(response.jwt(), rMemberName(), rMobile(), rPassword());
+        String departmentId = DepartmentApi.createDepartment(response.jwt(), CreateDepartmentCommand.builder().name(rDepartmentName()).build());
         String departmentCustomId = rCustomId();
         IntegrationUpdateDepartmentCustomIdCommand updateCommand = IntegrationUpdateDepartmentCustomIdCommand.builder().customId(departmentCustomId).build();
         IntegrationApi.updateDepartmentCustomId(tenant.getApiSetting().getApiKey(),
@@ -2717,8 +2717,8 @@ public class IntegrationControllerApiTest extends BaseApiTest {
                 .departmentIds(List.of(departmentId))
                 .build();
 
-        MemberApi.updateMember(response.getJwt(), memberId, command);
-        DepartmentApi.addDepartmentManager(response.getJwt(), departmentId, memberId);
+        MemberApi.updateMember(response.jwt(), memberId, command);
+        DepartmentApi.addDepartmentManager(response.jwt(), departmentId, memberId);
 
         QIntegrationDepartment qDepartment = IntegrationApi.fetchDepartmentByCustomId(tenant.getApiSetting().getApiKey(),
                 tenant.getApiSetting().getApiSecret(), departmentCustomId);
@@ -2735,8 +2735,8 @@ public class IntegrationControllerApiTest extends BaseApiTest {
     @Test
     public void should_fail_authentication_for_wrong_credentials() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
         assertError(() -> IntegrationApi.listAppsRaw(tenant.getApiSetting().getApiKey(), "wrongApiSecret"), AUTHENTICATION_FAILED);
         assertError(() -> IntegrationApi.listAppsRaw("wrongApiKey", tenant.getApiSetting().getApiSecret()), AUTHENTICATION_FAILED);
     }

@@ -32,23 +32,23 @@ public class KanbanControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_kanban() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
         FItemStatusControl control = defaultItemStatusControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
-        Attribute attribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(control.getId()).range(NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
+        Attribute attribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(control.getId()).range(NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute);
 
-        CreateQrResponse qrResponse1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qrResponse2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qrResponse3 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qrResponse1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qrResponse2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qrResponse3 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
         ItemStatusAnswer answer1 = rAnswerBuilder(control).optionId(control.getOptions().get(0).getId()).build();
         ItemStatusAnswer answer2 = rAnswerBuilder(control).optionId(control.getOptions().get(1).getId()).build();
-        SubmissionApi.newSubmission(response.getJwt(), qrResponse1.getQrId(), response.getHomePageId(), answer1);
-        SubmissionApi.newSubmission(response.getJwt(), qrResponse2.getQrId(), response.getHomePageId(), answer2);
-        SubmissionApi.newSubmission(response.getJwt(), qrResponse3.getQrId(), response.getHomePageId(), answer2);
+        SubmissionApi.newSubmission(response.jwt(), qrResponse1.getQrId(), response.homePageId(), answer1);
+        SubmissionApi.newSubmission(response.jwt(), qrResponse2.getQrId(), response.homePageId(), answer2);
+        SubmissionApi.newSubmission(response.jwt(), qrResponse3.getQrId(), response.homePageId(), answer2);
 
-        QAttributeKanban qAttributeKanban = KanbanApi.fetchKanban(response.getJwt(), FetchKanbanQuery.builder().appId(response.getAppId()).attributeId(attribute.getId()).build());
+        QAttributeKanban qAttributeKanban = KanbanApi.fetchKanban(response.jwt(), FetchKanbanQuery.builder().appId(response.appId()).attributeId(attribute.getId()).build());
         QAttributeOptionCount option1Count = qAttributeKanban.getCounts().stream().filter(qAttributeOptionCount -> qAttributeOptionCount.getOptionId().equals(answer1.getOptionId())).findFirst().get();
         assertEquals(1, option1Count.getCount());
 
@@ -59,24 +59,24 @@ public class KanbanControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_kanban_with_sub_groups() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
         FItemStatusControl control = defaultItemStatusControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
-        Attribute attribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(control.getId()).range(NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute);
-        String subGroupId = GroupApi.createGroupWithParent(response.getJwt(), response.getAppId(), response.getDefaultGroupId());
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
+        Attribute attribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(control.getId()).range(NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute);
+        String subGroupId = GroupApi.createGroupWithParent(response.jwt(), response.appId(), response.defaultGroupId());
 
-        CreateQrResponse qrResponse1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qrResponse2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qrResponse3 = QrApi.createQr(response.getJwt(), subGroupId);
+        CreateQrResponse qrResponse1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qrResponse2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qrResponse3 = QrApi.createQr(response.jwt(), subGroupId);
 
         ItemStatusAnswer answer1 = rAnswerBuilder(control).optionId(control.getOptions().get(0).getId()).build();
         ItemStatusAnswer answer2 = rAnswerBuilder(control).optionId(control.getOptions().get(1).getId()).build();
-        SubmissionApi.newSubmission(response.getJwt(), qrResponse1.getQrId(), response.getHomePageId(), answer1);
-        SubmissionApi.newSubmission(response.getJwt(), qrResponse2.getQrId(), response.getHomePageId(), answer2);
-        SubmissionApi.newSubmission(response.getJwt(), qrResponse3.getQrId(), response.getHomePageId(), answer2);
+        SubmissionApi.newSubmission(response.jwt(), qrResponse1.getQrId(), response.homePageId(), answer1);
+        SubmissionApi.newSubmission(response.jwt(), qrResponse2.getQrId(), response.homePageId(), answer2);
+        SubmissionApi.newSubmission(response.jwt(), qrResponse3.getQrId(), response.homePageId(), answer2);
 
-        QAttributeKanban qAttributeKanban = KanbanApi.fetchKanban(response.getJwt(), FetchKanbanQuery.builder().appId(response.getAppId()).groupId(response.getDefaultGroupId()).attributeId(attribute.getId()).build());
+        QAttributeKanban qAttributeKanban = KanbanApi.fetchKanban(response.jwt(), FetchKanbanQuery.builder().appId(response.appId()).groupId(response.defaultGroupId()).attributeId(attribute.getId()).build());
         QAttributeOptionCount option1Count = qAttributeKanban.getCounts().stream().filter(qAttributeOptionCount -> qAttributeOptionCount.getOptionId().equals(answer1.getOptionId())).findFirst().get();
         assertEquals(1, option1Count.getCount());
 
@@ -88,11 +88,11 @@ public class KanbanControllerApiTest extends BaseApiTest {
     public void should_fail_fetch_kanban_if_plan_not_allowed() {
         PreparedAppResponse response = setupApi.registerWithApp();
         FCheckboxControl control = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
-        Attribute attribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(control.getId()).range(NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
+        Attribute attribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(control.getId()).range(NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute);
 
-        assertError(() -> KanbanApi.fetchKanbanRaw(response.getJwt(), FetchKanbanQuery.builder().appId(response.getAppId()).attributeId(attribute.getId()).build()), KANBAN_NOT_ALLOWED);
+        assertError(() -> KanbanApi.fetchKanbanRaw(response.jwt(), FetchKanbanQuery.builder().appId(response.appId()).attributeId(attribute.getId()).build()), KANBAN_NOT_ALLOWED);
     }
 
 }

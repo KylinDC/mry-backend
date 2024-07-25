@@ -37,12 +37,12 @@ public class SignatureControlApiTest extends BaseApiTest {
     @Test
     public void should_create_control_normally() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FSignatureControl control = defaultSignatureControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         Control updatedControl = app.controlByIdOptional(control.getId()).get();
         assertEquals(control, updatedControl);
     }
@@ -50,13 +50,13 @@ public class SignatureControlApiTest extends BaseApiTest {
     @Test
     public void should_answer_normally() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FSignatureControl control = defaultSignatureControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         SignatureAnswer answer = rAnswer(control);
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), answer);
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), answer);
 
         Submission submission = submissionRepository.byId(submissionId);
         SignatureAnswer updatedAnswer = (SignatureAnswer) submission.allAnswers().get(control.getId());
@@ -67,32 +67,32 @@ public class SignatureControlApiTest extends BaseApiTest {
     @Test
     public void should_fail_answer_if_not_filled_for_mandatory() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FSignatureControl control = defaultSignatureControlBuilder().fillableSetting(defaultFillableSettingBuilder().mandatory(true).build()).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         SignatureAnswer answer = rAnswerBuilder(control).signature(null).build();
-        NewSubmissionCommand command = newSubmissionCommand(response.getQrId(), response.getHomePageId(), answer);
+        NewSubmissionCommand command = newSubmissionCommand(response.qrId(), response.homePageId(), answer);
 
-        assertError(() -> SubmissionApi.newSubmissionRaw(response.getJwt(), command), MANDATORY_ANSWER_REQUIRED);
+        assertError(() -> SubmissionApi.newSubmissionRaw(response.jwt(), command), MANDATORY_ANSWER_REQUIRED);
     }
 
     @Test
     public void should_calculate_first_submission_answer_as_attribute_value() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FSignatureControl control = defaultSignatureControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
-        Attribute attribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_FIRST).pageId(response.getHomePageId()).controlId(control.getId()).range(NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
+        Attribute attribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_FIRST).pageId(response.homePageId()).controlId(control.getId()).range(NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute);
 
         SignatureAnswer answer = rAnswer(control);
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), answer);
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswer(control));
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), answer);
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswer(control));
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         SignatureAttributeValue attributeValue = (SignatureAttributeValue) qr.getAttributeValues().get(attribute.getId());
         assertEquals(answer.getSignature(), attributeValue.getSignature());
         assertNull(qr.getIndexedValues());
@@ -101,18 +101,18 @@ public class SignatureControlApiTest extends BaseApiTest {
     @Test
     public void should_calculate_last_submission_answer_as_attribute_value() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FSignatureControl control = defaultSignatureControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
-        Attribute attribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(control.getId()).range(NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
+        Attribute attribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(control.getId()).range(NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute);
 
         SignatureAnswer answer = rAnswer(control);
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswer(control));
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), answer);
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswer(control));
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), answer);
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         SignatureAttributeValue attributeValue = (SignatureAttributeValue) qr.getAttributeValues().get(attribute.getId());
         assertEquals(answer.getSignature(), attributeValue.getSignature());
         assertNull(qr.getIndexedValues());

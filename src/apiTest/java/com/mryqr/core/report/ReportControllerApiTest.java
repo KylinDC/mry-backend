@@ -124,7 +124,7 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_instance_count_number_report() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         InstanceNumberReport report = InstanceNumberReport.builder()
                 .id(newShortUuid())
@@ -135,14 +135,14 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
 
-        QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        assertEquals(2, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        QrApi.createQr(response.jwt(), response.defaultGroupId());
+        assertEquals(2, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
@@ -158,17 +158,17 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        assertError(() -> ReportApi.fetchNumberReportRaw(response.getJwt(), query), REPORTING_NOT_ALLOWED);
+        assertError(() -> ReportApi.fetchNumberReportRaw(response.jwt(), query), REPORTING_NOT_ALLOWED);
     }
 
     @Test
     public void should_fetch_number_report_for_specific_group() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         InstanceNumberReport report = InstanceNumberReport.builder()
                 .id(newShortUuid())
@@ -179,22 +179,22 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
-                .groupId(response.getDefaultGroupId())
+                .appId(response.appId())
+                .groupId(response.defaultGroupId())
                 .report(report)
                 .build();
 
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
 
-        String groupId = GroupApi.createGroup(response.getJwt(), response.getAppId());
-        QrApi.createQr(response.getJwt(), groupId);
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        String groupId = GroupApi.createGroup(response.jwt(), response.appId());
+        QrApi.createQr(response.jwt(), groupId);
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_number_report_based_on_range() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         InstanceNumberReport report = InstanceNumberReport.builder()
                 .id(newShortUuid())
@@ -205,26 +205,26 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
-                .groupId(response.getDefaultGroupId())
+                .appId(response.appId())
+                .groupId(response.defaultGroupId())
                 .report(report)
                 .build();
 
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         ReflectionTestUtils.setField(qr, "createdAt", Instant.now().minus(10, DAYS));
         qrRepository.save(qr);
 
-        assertEquals(0, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertEquals(0, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fail_fetch_number_report_if_not_app_manager() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
-        CreateMemberResponse memberResponse = MemberApi.createMemberAndLogin(response.getJwt());
+        CreateMemberResponse memberResponse = MemberApi.createMemberAndLogin(response.jwt());
 
         InstanceNumberReport report = InstanceNumberReport.builder()
                 .id(newShortUuid())
@@ -235,25 +235,25 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        assertError(() -> ReportApi.fetchNumberReportRaw(memberResponse.getJwt(), query), ACCESS_DENIED);
+        assertError(() -> ReportApi.fetchNumberReportRaw(memberResponse.jwt(), query), ACCESS_DENIED);
 
-        GroupApi.addGroupManagers(response.getJwt(), response.getDefaultGroupId(), memberResponse.getMemberId());
-        assertError(() -> ReportApi.fetchNumberReportRaw(memberResponse.getJwt(), query), ACCESS_DENIED);
+        GroupApi.addGroupManagers(response.jwt(), response.defaultGroupId(), memberResponse.memberId());
+        assertError(() -> ReportApi.fetchNumberReportRaw(memberResponse.jwt(), query), ACCESS_DENIED);
 
-        AppApi.setAppManagers(response.getJwt(), response.getAppId(), memberResponse.getMemberId());
-        assertEquals(1, ReportApi.fetchNumberReport(memberResponse.getJwt(), query).getNumber());
+        AppApi.setAppManagers(response.jwt(), response.appId(), memberResponse.memberId());
+        assertEquals(1, ReportApi.fetchNumberReport(memberResponse.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fail_fetch_number_report_if_not_group_manager() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
-        CreateMemberResponse memberResponse = MemberApi.createMemberAndLogin(response.getJwt());
+        CreateMemberResponse memberResponse = MemberApi.createMemberAndLogin(response.jwt());
 
         InstanceNumberReport report = InstanceNumberReport.builder()
                 .id(newShortUuid())
@@ -264,21 +264,21 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
-                .groupId(response.getDefaultGroupId())
+                .appId(response.appId())
+                .groupId(response.defaultGroupId())
                 .report(report)
                 .build();
 
-        assertError(() -> ReportApi.fetchNumberReportRaw(memberResponse.getJwt(), query), ACCESS_DENIED);
+        assertError(() -> ReportApi.fetchNumberReportRaw(memberResponse.jwt(), query), ACCESS_DENIED);
 
-        GroupApi.addGroupManagers(response.getJwt(), response.getDefaultGroupId(), memberResponse.getMemberId());
-        assertEquals(1, ReportApi.fetchNumberReport(memberResponse.getJwt(), query).getNumber());
+        GroupApi.addGroupManagers(response.jwt(), response.defaultGroupId(), memberResponse.memberId());
+        assertEquals(1, ReportApi.fetchNumberReport(memberResponse.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_instance_submission_count_number_report() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         InstanceNumberReport report = InstanceNumberReport.builder()
                 .id(newShortUuid())
@@ -289,19 +289,19 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        assertEquals(0, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertEquals(0, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_instance_accessed_number_report() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         InstanceNumberReport report = InstanceNumberReport.builder()
                 .id(newShortUuid())
@@ -312,24 +312,24 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        assertEquals(0, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
-        QR qr = qrRepository.byId(response.getQrId());
+        assertEquals(0, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
+        QR qr = qrRepository.byId(response.qrId());
         qr.access();
         qrRepository.save(qr);
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_sum_attribute_number_report() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         Attribute attribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).range(AttributeStatisticRange.NO_LIMIT).type(AttributeType.INSTANCE_SUBMIT_COUNT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute);
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute);
 
         AttributeNumberReport report = AttributeNumberReport.builder()
                 .id(newShortUuid())
@@ -341,22 +341,22 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        assertEquals(0, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertEquals(0, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_avg_attribute_number_report() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         Attribute attribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).range(AttributeStatisticRange.NO_LIMIT).type(AttributeType.INSTANCE_SUBMIT_COUNT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute);
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute);
 
         AttributeNumberReport report = AttributeNumberReport.builder()
                 .id(newShortUuid())
@@ -368,28 +368,28 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        assertEquals(0, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertEquals(0, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
 
-        QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        assertEquals(2, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        QrApi.createQr(response.jwt(), response.defaultGroupId());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        assertEquals(2, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_max_attribute_number_report() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         Attribute attribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).range(AttributeStatisticRange.NO_LIMIT).type(AttributeType.INSTANCE_SUBMIT_COUNT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute);
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute);
 
         AttributeNumberReport report = AttributeNumberReport.builder()
                 .id(newShortUuid())
@@ -401,29 +401,29 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        assertEquals(0, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertEquals(0, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
 
-        CreateQrResponse qrResponse = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        SubmissionApi.newSubmission(response.getJwt(), qrResponse.getQrId(), response.getHomePageId());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        assertEquals(3, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        CreateQrResponse qrResponse = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        SubmissionApi.newSubmission(response.jwt(), qrResponse.getQrId(), response.homePageId());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        assertEquals(3, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
 
     @Test
     public void should_fetch_min_attribute_number_report() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         Attribute attribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).range(AttributeStatisticRange.NO_LIMIT).type(AttributeType.INSTANCE_SUBMIT_COUNT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute);
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute);
 
         AttributeNumberReport report = AttributeNumberReport.builder()
                 .id(newShortUuid())
@@ -435,28 +435,28 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        assertEquals(0, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertEquals(0, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
 
-        CreateQrResponse qrResponse = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        SubmissionApi.newSubmission(response.getJwt(), qrResponse.getQrId(), response.getHomePageId());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        CreateQrResponse qrResponse = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        SubmissionApi.newSubmission(response.jwt(), qrResponse.getQrId(), response.homePageId());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_attribute_number_report_for_range() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         Attribute attribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).range(AttributeStatisticRange.NO_LIMIT).type(AttributeType.INSTANCE_SUBMIT_COUNT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute);
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute);
 
         AttributeNumberReport report = AttributeNumberReport.builder()
                 .id(newShortUuid())
@@ -468,28 +468,28 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        assertEquals(0, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertEquals(0, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
 
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         ReflectionTestUtils.setField(qr, "createdAt", Instant.now().minus(10, DAYS));
         qrRepository.save(qr);
-        assertNull(ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertNull(ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_attribute_number_report_for_specific_group() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         Attribute attribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).range(AttributeStatisticRange.NO_LIMIT).type(AttributeType.INSTANCE_SUBMIT_COUNT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute);
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute);
 
         AttributeNumberReport report = AttributeNumberReport.builder()
                 .id(newShortUuid())
@@ -501,286 +501,286 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .build();
 
-        assertEquals(0, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertEquals(0, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
 
-        String newGroupId = GroupApi.createGroup(response.getJwt(), response.getAppId());
-        CreateQrResponse qrResponse = QrApi.createQr(response.getJwt(), newGroupId);
-        SubmissionApi.newSubmission(response.getJwt(), qrResponse.getQrId(), response.getHomePageId());
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        String newGroupId = GroupApi.createGroup(response.jwt(), response.appId());
+        CreateQrResponse qrResponse = QrApi.createQr(response.jwt(), newGroupId);
+        SubmissionApi.newSubmission(response.jwt(), qrResponse.getQrId(), response.homePageId());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_page_submit_count_number_report() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         PageNumberReport report = PageNumberReport.builder()
                 .id(newShortUuid())
                 .name(rReportName())
                 .type(PAGE_NUMBER_REPORT)
                 .range(LAST_7_DAYS)
-                .pageId(response.getHomePageId())
+                .pageId(response.homePageId())
                 .pageNumberReportType(PAGE_SUBMIT_COUNT)
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        assertEquals(0, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertEquals(0, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_page_number_report_for_specific_group() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         PageNumberReport report = PageNumberReport.builder()
                 .id(newShortUuid())
                 .name(rReportName())
                 .type(PAGE_NUMBER_REPORT)
                 .range(LAST_7_DAYS)
-                .pageId(response.getHomePageId())
+                .pageId(response.homePageId())
                 .pageNumberReportType(PAGE_SUBMIT_COUNT)
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .build();
 
-        assertEquals(0, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertEquals(0, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
 
-        String newGroupId = GroupApi.createGroup(response.getJwt(), response.getAppId());
-        CreateQrResponse qrResponse = QrApi.createQr(response.getJwt(), newGroupId);
-        SubmissionApi.newSubmission(response.getJwt(), qrResponse.getQrId(), response.getHomePageId());
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        String newGroupId = GroupApi.createGroup(response.jwt(), response.appId());
+        CreateQrResponse qrResponse = QrApi.createQr(response.jwt(), newGroupId);
+        SubmissionApi.newSubmission(response.jwt(), qrResponse.getQrId(), response.homePageId());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_page_number_report_for_sub_groups() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         PageNumberReport report = PageNumberReport.builder()
                 .id(newShortUuid())
                 .name(rReportName())
                 .type(PAGE_NUMBER_REPORT)
                 .range(LAST_7_DAYS)
-                .pageId(response.getHomePageId())
+                .pageId(response.homePageId())
                 .pageNumberReportType(PAGE_SUBMIT_COUNT)
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .build();
 
-        String newGroupId = GroupApi.createGroupWithParent(response.getJwt(), response.getAppId(), response.getDefaultGroupId());
-        CreateQrResponse newQr = QrApi.createQr(response.getJwt(), newGroupId);
+        String newGroupId = GroupApi.createGroupWithParent(response.jwt(), response.appId(), response.defaultGroupId());
+        CreateQrResponse newQr = QrApi.createQr(response.jwt(), newGroupId);
 
-        SubmissionApi.newSubmission(response.getJwt(), newQr.getQrId(), response.getHomePageId());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        assertEquals(2, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        SubmissionApi.newSubmission(response.jwt(), newQr.getQrId(), response.homePageId());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        assertEquals(2, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_page_number_report_for_range() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         PageNumberReport report = PageNumberReport.builder()
                 .id(newShortUuid())
                 .name(rReportName())
                 .type(PAGE_NUMBER_REPORT)
                 .range(LAST_7_DAYS)
-                .pageId(response.getHomePageId())
+                .pageId(response.homePageId())
                 .pageNumberReportType(PAGE_SUBMIT_COUNT)
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        assertEquals(0, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertEquals(0, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
 
         Submission submission = submissionRepository.byId(submissionId);
         ReflectionTestUtils.setField(submission, "createdAt", Instant.now().minus(10, DAYS));
         submissionRepository.save(submission);
-        assertEquals(0, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertEquals(0, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_sum_control_number_report() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FNumberInputControl control = defaultNumberInputControlBuilder().precision(3).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         ControlNumberReport report = ControlNumberReport.builder()
                 .id(newShortUuid())
                 .name(rReportName())
                 .type(CONTROL_NUMBER_REPORT)
                 .range(LAST_7_DAYS)
-                .pageId(response.getHomePageId())
+                .pageId(response.homePageId())
                 .controlId(control.getId())
                 .numberAggregationType(SUM)
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        assertNull(ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(control).number(2D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(control).number(1D).build());
-        assertEquals(3, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertNull(ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(control).number(2D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(control).number(1D).build());
+        assertEquals(3, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_avg_control_number_report() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FNumberInputControl control = defaultNumberInputControlBuilder().precision(3).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         ControlNumberReport report = ControlNumberReport.builder()
                 .id(newShortUuid())
                 .name(rReportName())
                 .type(CONTROL_NUMBER_REPORT)
                 .range(LAST_7_DAYS)
-                .pageId(response.getHomePageId())
+                .pageId(response.homePageId())
                 .controlId(control.getId())
                 .numberAggregationType(AVG)
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        assertNull(ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(control).number(3D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(control).number(1D).build());
-        assertEquals(2, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertNull(ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(control).number(3D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(control).number(1D).build());
+        assertEquals(2, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_max_control_number_report() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FNumberInputControl control = defaultNumberInputControlBuilder().precision(3).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         ControlNumberReport report = ControlNumberReport.builder()
                 .id(newShortUuid())
                 .name(rReportName())
                 .type(CONTROL_NUMBER_REPORT)
                 .range(LAST_7_DAYS)
-                .pageId(response.getHomePageId())
+                .pageId(response.homePageId())
                 .controlId(control.getId())
                 .numberAggregationType(MAX)
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        assertNull(ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(control).number(3D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(control).number(1D).build());
-        assertEquals(3, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertNull(ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(control).number(3D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(control).number(1D).build());
+        assertEquals(3, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_min_control_number_report() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FNumberInputControl control = defaultNumberInputControlBuilder().precision(3).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         ControlNumberReport report = ControlNumberReport.builder()
                 .id(newShortUuid())
                 .name(rReportName())
                 .type(CONTROL_NUMBER_REPORT)
                 .range(LAST_7_DAYS)
-                .pageId(response.getHomePageId())
+                .pageId(response.homePageId())
                 .controlId(control.getId())
                 .numberAggregationType(MIN)
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        assertNull(ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(control).number(3D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(control).number(1D).build());
-        assertEquals(1, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertNull(ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(control).number(3D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(control).number(1D).build());
+        assertEquals(1, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_control_number_report_for_range() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FNumberInputControl control = defaultNumberInputControlBuilder().precision(3).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         ControlNumberReport report = ControlNumberReport.builder()
                 .id(newShortUuid())
                 .name(rReportName())
                 .type(CONTROL_NUMBER_REPORT)
                 .range(LAST_7_DAYS)
-                .pageId(response.getHomePageId())
+                .pageId(response.homePageId())
                 .controlId(control.getId())
                 .numberAggregationType(MAX)
                 .build();
 
         NumberReportQuery query = NumberReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(control).number(3D).build());
-        assertEquals(3, ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(control).number(3D).build());
+        assertEquals(3, ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
         Submission submission = submissionRepository.byId(submissionId);
         ReflectionTestUtils.setField(submission, "createdAt", Instant.now().minus(10, DAYS));
         submissionRepository.save(submission);
-        assertNull(ReportApi.fetchNumberReport(response.getJwt(), query).getNumber());
+        assertNull(ReportApi.fetchNumberReport(response.jwt(), query).getNumber());
     }
 
     @Test
     public void should_fetch_control_bar_report_for_submission_count() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
 
         ControlBarReport report = ControlBarReport.builder()
                 .id(newShortUuid())
@@ -790,7 +790,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .aspectRatio(50)
                 .setting(ControlCategorizedReportSetting.builder()
                         .segmentType(SUBMIT_COUNT_SUM)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .basedControlId(checkboxControl.getId())
                         .targetControlIds(List.of())
                         .range(NO_LIMIT)
@@ -799,14 +799,14 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1, optionId2)).build());
-        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1, optionId2)).build());
+        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments = qChartReport.getSegmentsData().get(0);
         assertEquals(2, segments.size());
         CategorizedOptionSegment segment1 = segments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
@@ -815,8 +815,8 @@ public class ReportControllerApiTest extends BaseApiTest {
         CategorizedOptionSegment segment2 = segments.stream().filter(segment -> segment.getOption().equals(optionId2)).findFirst().get();
         assertEquals(1, segment2.getValue());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
-        QCategorizedOptionSegmentReport updatedReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
+        QCategorizedOptionSegmentReport updatedReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> updatedSegments = updatedReport.getSegmentsData().get(0);
         CategorizedOptionSegment updatedSegment1 = updatedSegments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
         assertEquals(2, updatedSegment1.getValue());
@@ -825,10 +825,10 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_bar_report_for_answer_sum() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
 
         ControlBarReport report = ControlBarReport.builder()
                 .id(newShortUuid())
@@ -838,7 +838,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .aspectRatio(50)
                 .setting(ControlCategorizedReportSetting.builder()
                         .segmentType(CONTROL_VALUE_SUM)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .basedControlId(checkboxControl.getId())
                         .targetControlIds(List.of(numberInputControl.getId()))
                         .range(NO_LIMIT)
@@ -847,16 +847,16 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1, optionId2)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1, optionId2)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
 
-        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments = qChartReport.getSegmentsData().get(0);
         CategorizedOptionSegment segment1 = segments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
         CategorizedOptionSegment segment2 = segments.stream().filter(segment -> segment.getOption().equals(optionId2)).findFirst().get();
@@ -867,10 +867,10 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_bar_report_for_answer_avg() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
 
         ControlBarReport report = ControlBarReport.builder()
                 .id(newShortUuid())
@@ -880,7 +880,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .aspectRatio(50)
                 .setting(ControlCategorizedReportSetting.builder()
                         .segmentType(CONTROL_VALUE_AVG)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .basedControlId(checkboxControl.getId())
                         .targetControlIds(List.of(numberInputControl.getId()))
                         .range(NO_LIMIT)
@@ -889,17 +889,17 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(4D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1, optionId2)).build(), rAnswerBuilder(numberInputControl).number(6D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(8D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(4D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1, optionId2)).build(), rAnswerBuilder(numberInputControl).number(6D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(8D).build());
 
-        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments = qChartReport.getSegmentsData().get(0);
         CategorizedOptionSegment segment1 = segments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
         CategorizedOptionSegment segment2 = segments.stream().filter(segment -> segment.getOption().equals(optionId2)).findFirst().get();
@@ -910,10 +910,10 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_bar_report_for_answer_max() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
 
         ControlBarReport report = ControlBarReport.builder()
                 .id(newShortUuid())
@@ -923,7 +923,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .aspectRatio(50)
                 .setting(ControlCategorizedReportSetting.builder()
                         .segmentType(CONTROL_VALUE_MAX)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .basedControlId(checkboxControl.getId())
                         .targetControlIds(List.of(numberInputControl.getId()))
                         .range(NO_LIMIT)
@@ -932,17 +932,17 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(4D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1, optionId2)).build(), rAnswerBuilder(numberInputControl).number(6D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(8D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(4D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1, optionId2)).build(), rAnswerBuilder(numberInputControl).number(6D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(8D).build());
 
-        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments = qChartReport.getSegmentsData().get(0);
         CategorizedOptionSegment segment1 = segments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
         CategorizedOptionSegment segment2 = segments.stream().filter(segment -> segment.getOption().equals(optionId2)).findFirst().get();
@@ -953,10 +953,10 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_bar_report_for_answer_min() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
 
         ControlBarReport report = ControlBarReport.builder()
                 .id(newShortUuid())
@@ -966,7 +966,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .aspectRatio(50)
                 .setting(ControlCategorizedReportSetting.builder()
                         .segmentType(CONTROL_VALUE_MIN)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .basedControlId(checkboxControl.getId())
                         .targetControlIds(List.of(numberInputControl.getId()))
                         .range(NO_LIMIT)
@@ -975,17 +975,17 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(4D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1, optionId2)).build(), rAnswerBuilder(numberInputControl).number(6D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(8D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(4D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1, optionId2)).build(), rAnswerBuilder(numberInputControl).number(6D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(8D).build());
 
-        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments = qChartReport.getSegmentsData().get(0);
         CategorizedOptionSegment segment1 = segments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
         CategorizedOptionSegment segment2 = segments.stream().filter(segment -> segment.getOption().equals(optionId2)).findFirst().get();
@@ -996,10 +996,10 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_bar_report_for_given_range() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
 
         ControlBarReport report = ControlBarReport.builder()
                 .id(newShortUuid())
@@ -1009,7 +1009,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .aspectRatio(50)
                 .setting(ControlCategorizedReportSetting.builder()
                         .segmentType(CONTROL_VALUE_MIN)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .basedControlId(checkboxControl.getId())
                         .targetControlIds(List.of(numberInputControl.getId()))
                         .range(THIS_MONTH)
@@ -1018,35 +1018,35 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
-        String submission1Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(4D).build());
-        String submission2Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(6D).build());
+        String submission1Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(4D).build());
+        String submission2Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(6D).build());
 
-        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(4, qChartReport.getSegmentsData().get(0).get(0).getValue());
 
         Submission submission = submissionRepository.byId(submission1Id);
         ReflectionTestUtils.setField(submission, "createdAt", startOfLastMonth());
         submissionRepository.save(submission);
 
-        QCategorizedOptionSegmentReport updatedChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QCategorizedOptionSegmentReport updatedChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(6, updatedChartReport.getSegmentsData().get(0).get(0).getValue());
     }
 
     @Test
     public void should_fetch_control_bar_report_for_given_group() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
 
-        String anotherGroupId = GroupApi.createGroup(response.getJwt(), response.getAppId());
-        CreateQrResponse anotherQr = QrApi.createQr(response.getJwt(), anotherGroupId);
+        String anotherGroupId = GroupApi.createGroup(response.jwt(), response.appId());
+        CreateQrResponse anotherQr = QrApi.createQr(response.jwt(), anotherGroupId);
 
         ControlBarReport report = ControlBarReport.builder()
                 .id(newShortUuid())
@@ -1056,7 +1056,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .aspectRatio(50)
                 .setting(ControlCategorizedReportSetting.builder()
                         .segmentType(CONTROL_VALUE_MIN)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .basedControlId(checkboxControl.getId())
                         .targetControlIds(List.of(numberInputControl.getId()))
                         .range(NO_LIMIT)
@@ -1066,30 +1066,30 @@ public class ReportControllerApiTest extends BaseApiTest {
 
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(4D).build());
-        SubmissionApi.newSubmission(response.getJwt(), anotherQr.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(3D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(4D).build());
+        SubmissionApi.newSubmission(response.jwt(), anotherQr.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(3D).build());
 
         ChartReportQuery unGroupedQuery = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
-        assertEquals(3, ((QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), unGroupedQuery)).getSegmentsData().get(0).get(0).getValue());
+        assertEquals(3, ((QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), unGroupedQuery)).getSegmentsData().get(0).get(0).getValue());
 
         ChartReportQuery groupedQuery = ChartReportQuery.builder()
-                .appId(response.getAppId())
-                .groupId(response.getDefaultGroupId())
+                .appId(response.appId())
+                .groupId(response.defaultGroupId())
                 .report(report)
                 .build();
-        assertEquals(4, ((QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), groupedQuery)).getSegmentsData().get(0).get(0).getValue());
+        assertEquals(4, ((QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), groupedQuery)).getSegmentsData().get(0).get(0).getValue());
     }
 
     @Test
     public void should_fetch_control_pie_report() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
 
         ControlPieReport report = ControlPieReport.builder()
                 .id(newShortUuid())
@@ -1099,7 +1099,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .aspectRatio(50)
                 .setting(ControlCategorizedReportSetting.builder()
                         .segmentType(SUBMIT_COUNT_SUM)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .basedControlId(checkboxControl.getId())
                         .targetControlIds(List.of())
                         .range(NO_LIMIT)
@@ -1108,14 +1108,14 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1, optionId2)).build());
-        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1, optionId2)).build());
+        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments = qChartReport.getSegmentsData().get(0);
         assertEquals(2, segments.size());
         CategorizedOptionSegment segment1 = segments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
@@ -1124,8 +1124,8 @@ public class ReportControllerApiTest extends BaseApiTest {
         CategorizedOptionSegment segment2 = segments.stream().filter(segment -> segment.getOption().equals(optionId2)).findFirst().get();
         assertEquals(1, segment2.getValue());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
-        QCategorizedOptionSegmentReport updatedReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
+        QCategorizedOptionSegmentReport updatedReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> updatedSegments = updatedReport.getSegmentsData().get(0);
         CategorizedOptionSegment updatedSegment1 = updatedSegments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
         assertEquals(2, updatedSegment1.getValue());
@@ -1134,10 +1134,10 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_doughnut_report() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
 
         ControlDoughnutReport report = ControlDoughnutReport.builder()
                 .id(newShortUuid())
@@ -1147,7 +1147,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .aspectRatio(50)
                 .setting(ControlCategorizedReportSetting.builder()
                         .segmentType(SUBMIT_COUNT_SUM)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .basedControlId(checkboxControl.getId())
                         .targetControlIds(List.of())
                         .range(NO_LIMIT)
@@ -1156,14 +1156,14 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1, optionId2)).build());
-        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1, optionId2)).build());
+        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments = qChartReport.getSegmentsData().get(0);
         assertEquals(2, segments.size());
         CategorizedOptionSegment segment1 = segments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
@@ -1172,8 +1172,8 @@ public class ReportControllerApiTest extends BaseApiTest {
         CategorizedOptionSegment segment2 = segments.stream().filter(segment -> segment.getOption().equals(optionId2)).findFirst().get();
         assertEquals(1, segment2.getValue());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
-        QCategorizedOptionSegmentReport updatedReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
+        QCategorizedOptionSegmentReport updatedReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> updatedSegments = updatedReport.getSegmentsData().get(0);
         CategorizedOptionSegment updatedSegment1 = updatedSegments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
         assertEquals(2, updatedSegment1.getValue());
@@ -1182,10 +1182,10 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_number_range_report_for_submit_count() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl basedControl = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl);
 
         ControlNumberRangeSegmentReport report = ControlNumberRangeSegmentReport.builder()
                 .id(newShortUuid())
@@ -1195,7 +1195,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .aspectRatio(50)
                 .setting(ControlNumberRangeSegmentReportSetting.builder()
                         .segmentType(SUBMIT_COUNT_SUM)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .basedControlId(basedControl.getId())
                         .numberRangesString("10,20,30,40")
                         .range(NO_LIMIT)
@@ -1204,14 +1204,14 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(11D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(22D).build());
-        QNumberRangeSegmentReport qChartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(11D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(22D).build());
+        QNumberRangeSegmentReport qChartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(List.of(10D, 20D, 30D, 40D), qChartReport.getNumberRanges());
         List<NumberRangeSegment> segments = qChartReport.getSegments();
         assertEquals(3, segments.size());
@@ -1226,10 +1226,10 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_number_range_report_for_answer_sum() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl basedControl = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl);
 
         ControlNumberRangeSegmentReport report = ControlNumberRangeSegmentReport.builder()
                 .id(newShortUuid())
@@ -1239,7 +1239,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .aspectRatio(50)
                 .setting(ControlNumberRangeSegmentReportSetting.builder()
                         .segmentType(CONTROL_VALUE_SUM)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .basedControlId(basedControl.getId())
                         .numberRangesString("10,20,30")
                         .targetControlId(targetControl.getId())
@@ -1249,14 +1249,14 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(11D).build(), rAnswerBuilder(targetControl).number(1D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(2D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(5D).build());
-        QNumberRangeSegmentReport qChartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(11D).build(), rAnswerBuilder(targetControl).number(1D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(2D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(5D).build());
+        QNumberRangeSegmentReport qChartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(List.of(10D, 20D, 30D), qChartReport.getNumberRanges());
         List<NumberRangeSegment> segments = qChartReport.getSegments();
         assertEquals(3, segments.get(0).getValue());
@@ -1268,10 +1268,10 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_number_range_report_for_answer_avg() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl basedControl = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl);
 
         ControlNumberRangeSegmentReport report = ControlNumberRangeSegmentReport.builder()
                 .id(newShortUuid())
@@ -1281,7 +1281,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .aspectRatio(50)
                 .setting(ControlNumberRangeSegmentReportSetting.builder()
                         .segmentType(CONTROL_VALUE_AVG)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .basedControlId(basedControl.getId())
                         .numberRangesString("10,20,30")
                         .targetControlId(targetControl.getId())
@@ -1291,14 +1291,14 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(11D).build(), rAnswerBuilder(targetControl).number(1D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(3D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(5D).build());
-        QNumberRangeSegmentReport qChartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(11D).build(), rAnswerBuilder(targetControl).number(1D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(3D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(5D).build());
+        QNumberRangeSegmentReport qChartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(List.of(10D, 20D, 30D), qChartReport.getNumberRanges());
         List<NumberRangeSegment> segments = qChartReport.getSegments();
         assertEquals(2, segments.get(0).getValue());
@@ -1310,10 +1310,10 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_number_range_report_for_answer_max() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl basedControl = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl);
 
         ControlNumberRangeSegmentReport report = ControlNumberRangeSegmentReport.builder()
                 .id(newShortUuid())
@@ -1323,7 +1323,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .aspectRatio(50)
                 .setting(ControlNumberRangeSegmentReportSetting.builder()
                         .segmentType(CONTROL_VALUE_MAX)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .basedControlId(basedControl.getId())
                         .numberRangesString("10,20,30")
                         .targetControlId(targetControl.getId())
@@ -1333,14 +1333,14 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(11D).build(), rAnswerBuilder(targetControl).number(1D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(3D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(5D).build());
-        QNumberRangeSegmentReport qChartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(11D).build(), rAnswerBuilder(targetControl).number(1D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(3D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(5D).build());
+        QNumberRangeSegmentReport qChartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(List.of(10D, 20D, 30D), qChartReport.getNumberRanges());
         List<NumberRangeSegment> segments = qChartReport.getSegments();
         assertEquals(3, segments.get(0).getValue());
@@ -1352,10 +1352,10 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_number_range_report_for_answer_min() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl basedControl = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl);
 
         ControlNumberRangeSegmentReport report = ControlNumberRangeSegmentReport.builder()
                 .id(newShortUuid())
@@ -1365,7 +1365,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .aspectRatio(50)
                 .setting(ControlNumberRangeSegmentReportSetting.builder()
                         .segmentType(CONTROL_VALUE_MIN)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .basedControlId(basedControl.getId())
                         .numberRangesString("10,20,30")
                         .targetControlId(targetControl.getId())
@@ -1375,14 +1375,14 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(11D).build(), rAnswerBuilder(targetControl).number(1D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(3D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(5D).build());
-        QNumberRangeSegmentReport qChartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(11D).build(), rAnswerBuilder(targetControl).number(1D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(3D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(5D).build());
+        QNumberRangeSegmentReport qChartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(List.of(10D, 20D, 30D), qChartReport.getNumberRanges());
         List<NumberRangeSegment> segments = qChartReport.getSegments();
         assertEquals(1, segments.get(0).getValue());
@@ -1394,10 +1394,10 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_number_range_report_for_given_range() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl basedControl = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl);
 
         ControlNumberRangeSegmentReport report = ControlNumberRangeSegmentReport.builder()
                 .id(newShortUuid())
@@ -1407,7 +1407,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .aspectRatio(50)
                 .setting(ControlNumberRangeSegmentReportSetting.builder()
                         .segmentType(CONTROL_VALUE_MIN)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .basedControlId(basedControl.getId())
                         .numberRangesString("10,20,30")
                         .targetControlId(targetControl.getId())
@@ -1417,30 +1417,30 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        String submission1Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(11D).build(), rAnswerBuilder(targetControl).number(1D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(3D).build());
-        assertEquals(1, ((QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query)).getSegments().get(0).getValue());
+        String submission1Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(11D).build(), rAnswerBuilder(targetControl).number(1D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(3D).build());
+        assertEquals(1, ((QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query)).getSegments().get(0).getValue());
 
         Submission submission = submissionRepository.byId(submission1Id);
         ReflectionTestUtils.setField(submission, "createdAt", startOfLastMonth());
         submissionRepository.save(submission);
-        assertEquals(3, ((QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query)).getSegments().get(0).getValue());
+        assertEquals(3, ((QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query)).getSegments().get(0).getValue());
     }
 
     @Test
     public void should_fetch_control_number_range_report_for_given_group() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl basedControl = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl);
 
-        String groupId = GroupApi.createGroup(response.getJwt(), response.getAppId());
-        CreateQrResponse anotherQr = QrApi.createQr(response.getJwt(), groupId);
+        String groupId = GroupApi.createGroup(response.jwt(), response.appId());
+        CreateQrResponse anotherQr = QrApi.createQr(response.jwt(), groupId);
 
         ControlNumberRangeSegmentReport report = ControlNumberRangeSegmentReport.builder()
                 .id(newShortUuid())
@@ -1450,7 +1450,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .aspectRatio(50)
                 .setting(ControlNumberRangeSegmentReportSetting.builder()
                         .segmentType(CONTROL_VALUE_MIN)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .basedControlId(basedControl.getId())
                         .numberRangesString("10,20,30")
                         .targetControlId(targetControl.getId())
@@ -1459,29 +1459,29 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(NumberRangeSegmentReportStyle.builder().build())
                 .build();
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(11D).build(), rAnswerBuilder(targetControl).number(1D).build());
-        SubmissionApi.newSubmission(response.getJwt(), anotherQr.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(3D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(11D).build(), rAnswerBuilder(targetControl).number(1D).build());
+        SubmissionApi.newSubmission(response.jwt(), anotherQr.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(3D).build());
 
         ChartReportQuery noGroupQuery = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
-        assertEquals(1, ((QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), noGroupQuery)).getSegments().get(0).getValue());
+        assertEquals(1, ((QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.jwt(), noGroupQuery)).getSegments().get(0).getValue());
 
         ChartReportQuery groupQuery = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .groupId(anotherQr.getGroupId())
                 .build();
-        assertEquals(3, ((QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), groupQuery)).getSegments().get(0).getValue());
+        assertEquals(3, ((QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.jwt(), groupQuery)).getSegments().get(0).getValue());
     }
 
     @Test
     public void should_fetch_control_time_segment_report_for_submit_count() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), targetControl);
 
         ControlTimeSegmentReport report = ControlTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -1495,7 +1495,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                                 .name("分时报告")
                                 .segmentType(SUBMIT_COUNT_SUM)
                                 .basedType(CREATED_AT)
-                                .pageId(response.getHomePageId())
+                                .pageId(response.homePageId())
                                 .build()))
                         .interval(PER_MONTH)
                         .build())
@@ -1503,19 +1503,19 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        String submission1Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(1D).build());
-        String submission2Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(1D).build());
-        String submission3Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(1D).build());
+        String submission1Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(1D).build());
+        String submission2Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(1D).build());
+        String submission3Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(1D).build());
 
         Submission submission1 = submissionRepository.byId(submission1Id);
         ReflectionTestUtils.setField(submission1, "createdAt", startOfLastMonth());
         submissionRepository.save(submission1);
 
-        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(PER_MONTH, qTimeSegmentReport.getInterval());
         assertEquals(2, qTimeSegmentReport.getSegmentsData().get(0).size());
         assertEquals(1, qTimeSegmentReport.getSegmentsData().get(0).get(0).getValue());
@@ -1525,9 +1525,9 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_time_segment_report_for_answer_sum() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), targetControl);
 
         ControlTimeSegmentReport report = ControlTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -1541,7 +1541,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                                 .name("分时统计")
                                 .segmentType(CONTROL_VALUE_SUM)
                                 .basedType(CREATED_AT)
-                                .pageId(response.getHomePageId())
+                                .pageId(response.homePageId())
                                 .targetControlId(targetControl.getId())
                                 .build()))
                         .interval(PER_MONTH)
@@ -1550,19 +1550,19 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        String submission1Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(5D).build());
-        String submission2Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(10D).build());
-        String submission3Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(20D).build());
+        String submission1Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(5D).build());
+        String submission2Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(10D).build());
+        String submission3Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(20D).build());
 
         Submission submission1 = submissionRepository.byId(submission1Id);
         ReflectionTestUtils.setField(submission1, "createdAt", startOfLastMonth());
         submissionRepository.save(submission1);
 
-        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(5, qTimeSegmentReport.getSegmentsData().get(0).get(0).getValue());
         assertEquals(30, qTimeSegmentReport.getSegmentsData().get(0).get(1).getValue());
     }
@@ -1570,9 +1570,9 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_time_segment_report_for_answer_avg() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), targetControl);
 
         ControlTimeSegmentReport report = ControlTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -1586,7 +1586,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                                 .name("分时统计")
                                 .segmentType(CONTROL_VALUE_AVG)
                                 .basedType(CREATED_AT)
-                                .pageId(response.getHomePageId())
+                                .pageId(response.homePageId())
                                 .targetControlId(targetControl.getId())
                                 .build()))
                         .interval(PER_MONTH)
@@ -1595,19 +1595,19 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        String submission1Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(5D).build());
-        String submission2Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(10D).build());
-        String submission3Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(20D).build());
+        String submission1Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(5D).build());
+        String submission2Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(10D).build());
+        String submission3Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(20D).build());
 
         Submission submission1 = submissionRepository.byId(submission1Id);
         ReflectionTestUtils.setField(submission1, "createdAt", startOfLastMonth());
         submissionRepository.save(submission1);
 
-        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(5, qTimeSegmentReport.getSegmentsData().get(0).get(0).getValue());
         assertEquals(15, qTimeSegmentReport.getSegmentsData().get(0).get(1).getValue());
     }
@@ -1615,9 +1615,9 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_time_segment_report_for_answer_max() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), targetControl);
 
         ControlTimeSegmentReport report = ControlTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -1631,7 +1631,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                                 .name("分时统计")
                                 .segmentType(CONTROL_VALUE_MAX)
                                 .basedType(CREATED_AT)
-                                .pageId(response.getHomePageId())
+                                .pageId(response.homePageId())
                                 .targetControlId(targetControl.getId())
                                 .build()))
                         .interval(PER_MONTH)
@@ -1640,19 +1640,19 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        String submission1Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(5D).build());
-        String submission2Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(10D).build());
-        String submission3Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(20D).build());
+        String submission1Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(5D).build());
+        String submission2Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(10D).build());
+        String submission3Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(20D).build());
 
         Submission submission1 = submissionRepository.byId(submission1Id);
         ReflectionTestUtils.setField(submission1, "createdAt", startOfLastMonth());
         submissionRepository.save(submission1);
 
-        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(5, qTimeSegmentReport.getSegmentsData().get(0).get(0).getValue());
         assertEquals(20, qTimeSegmentReport.getSegmentsData().get(0).get(1).getValue());
     }
@@ -1660,9 +1660,9 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_time_segment_report_for_answer_min() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), targetControl);
 
         ControlTimeSegmentReport report = ControlTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -1676,7 +1676,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                                 .name("分时统计")
                                 .segmentType(CONTROL_VALUE_MIN)
                                 .basedType(CREATED_AT)
-                                .pageId(response.getHomePageId())
+                                .pageId(response.homePageId())
                                 .targetControlId(targetControl.getId())
                                 .build()))
                         .interval(PER_MONTH)
@@ -1685,19 +1685,19 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        String submission1Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(5D).build());
-        String submission2Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(10D).build());
-        String submission3Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(20D).build());
+        String submission1Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(5D).build());
+        String submission2Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(10D).build());
+        String submission3Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(20D).build());
 
         Submission submission1 = submissionRepository.byId(submission1Id);
         ReflectionTestUtils.setField(submission1, "createdAt", startOfLastMonth());
         submissionRepository.save(submission1);
 
-        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(5, qTimeSegmentReport.getSegmentsData().get(0).get(0).getValue());
         assertEquals(10, qTimeSegmentReport.getSegmentsData().get(0).get(1).getValue());
     }
@@ -1705,12 +1705,12 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_time_segment_report_for_given_group() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), targetControl);
 
-        String groupId = GroupApi.createGroup(response.getJwt(), response.getAppId());
-        CreateQrResponse anotherQr = QrApi.createQr(response.getJwt(), groupId);
+        String groupId = GroupApi.createGroup(response.jwt(), response.appId());
+        CreateQrResponse anotherQr = QrApi.createQr(response.jwt(), groupId);
 
         ControlTimeSegmentReport report = ControlTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -1724,7 +1724,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                                 .name("分时统计")
                                 .segmentType(CONTROL_VALUE_MIN)
                                 .basedType(CREATED_AT)
-                                .pageId(response.getHomePageId())
+                                .pageId(response.homePageId())
                                 .targetControlId(targetControl.getId())
                                 .build()))
                         .interval(PER_MONTH)
@@ -1733,30 +1733,30 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
 
-        String submission1Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(5D).build());
-        String submission2Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(6D).build());
-        String submission3Id = SubmissionApi.newSubmission(response.getJwt(), anotherQr.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(4D).build());
+        String submission1Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(5D).build());
+        String submission2Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(6D).build());
+        String submission3Id = SubmissionApi.newSubmission(response.jwt(), anotherQr.getQrId(), response.homePageId(), rAnswerBuilder(targetControl).number(4D).build());
 
         ChartReportQuery noGroupQuery = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
-        assertEquals(4, ((QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), noGroupQuery)).getSegmentsData().get(0).get(0).getValue());
+        assertEquals(4, ((QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), noGroupQuery)).getSegmentsData().get(0).get(0).getValue());
 
         ChartReportQuery groupQuery = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .build();
-        assertEquals(5, ((QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), groupQuery)).getSegmentsData().get(0).get(0).getValue());
+        assertEquals(5, ((QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), groupQuery)).getSegmentsData().get(0).get(0).getValue());
     }
 
     @Test
     public void should_fetch_control_time_segment_report_for_per_season() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), targetControl);
 
         ControlTimeSegmentReport report = ControlTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -1770,7 +1770,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                                 .name("分时统计")
                                 .segmentType(CONTROL_VALUE_MIN)
                                 .basedType(CREATED_AT)
-                                .pageId(response.getHomePageId())
+                                .pageId(response.homePageId())
                                 .targetControlId(targetControl.getId())
                                 .build()))
                         .interval(PER_SEASON)
@@ -1779,13 +1779,13 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        String submission1Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(5D).build());
-        String submission2Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(10D).build());
-        String submission3Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(20D).build());
+        String submission1Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(5D).build());
+        String submission2Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(10D).build());
+        String submission3Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(20D).build());
 
         Submission submission1 = submissionRepository.byId(submission1Id);
         ReflectionTestUtils.setField(submission1, "createdAt", startOfLastSeason());
@@ -1795,7 +1795,7 @@ public class ReportControllerApiTest extends BaseApiTest {
         ReflectionTestUtils.setField(submission2, "createdAt", startOfLastSeason().plus(40, DAYS));
         submissionRepository.save(submission2);
 
-        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(5, qTimeSegmentReport.getSegmentsData().get(0).get(0).getValue());
         assertEquals(20, qTimeSegmentReport.getSegmentsData().get(0).get(1).getValue());
     }
@@ -1803,9 +1803,9 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_time_segment_report_for_per_year() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), targetControl);
 
         ControlTimeSegmentReport report = ControlTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -1819,7 +1819,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                                 .name("分时统计")
                                 .segmentType(CONTROL_VALUE_MIN)
                                 .basedType(CREATED_AT)
-                                .pageId(response.getHomePageId())
+                                .pageId(response.homePageId())
                                 .targetControlId(targetControl.getId())
                                 .build()))
                         .interval(PER_YEAR)
@@ -1828,13 +1828,13 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        String submission1Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(5D).build());
-        String submission2Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(10D).build());
-        String submission3Id = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(20D).build());
+        String submission1Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(5D).build());
+        String submission2Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(10D).build());
+        String submission3Id = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(20D).build());
 
         Submission submission1 = submissionRepository.byId(submission1Id);
         ReflectionTestUtils.setField(submission1, "createdAt", startOfLastYear());
@@ -1844,7 +1844,7 @@ public class ReportControllerApiTest extends BaseApiTest {
         ReflectionTestUtils.setField(submission2, "createdAt", startOfLastYear().plus(100, DAYS));
         submissionRepository.save(submission2);
 
-        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(5, qTimeSegmentReport.getSegmentsData().get(0).get(0).getValue());
         assertEquals(20, qTimeSegmentReport.getSegmentsData().get(0).get(1).getValue());
     }
@@ -1852,9 +1852,9 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_time_segment_report_for_submit_count_based_on_date_control() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FDateControl basedControl = defaultDateControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl);
 
         ControlTimeSegmentReport report = ControlTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -1868,7 +1868,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                                 .name("分时统计")
                                 .segmentType(SUBMIT_COUNT_SUM)
                                 .basedType(DATE_CONTROL)
-                                .pageId(response.getHomePageId())
+                                .pageId(response.homePageId())
                                 .basedControlId(basedControl.getId())
                                 .build()))
                         .interval(PER_MONTH)
@@ -1877,16 +1877,16 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().toString()).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(1).toString()).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(1).toString()).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(10).toString()).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().toString()).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(1).toString()).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(1).toString()).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(10).toString()).build());
 
-        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(PER_MONTH, qTimeSegmentReport.getInterval());
         assertEquals(2, qTimeSegmentReport.getSegmentsData().get(0).size());
         assertEquals(2, qTimeSegmentReport.getSegmentsData().get(0).get(0).getValue());
@@ -1896,10 +1896,10 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_control_time_segment_report_for_multiple_items() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FDateControl basedControl = defaultDateControl();
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl);
 
         ControlTimeSegmentReport report = ControlTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -1913,7 +1913,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                                         .name("提交量")
                                         .segmentType(SUBMIT_COUNT_SUM)
                                         .basedType(DATE_CONTROL)
-                                        .pageId(response.getHomePageId())
+                                        .pageId(response.homePageId())
                                         .basedControlId(basedControl.getId())
                                         .build(),
                                 ControlTimeSegmentReportSetting.TimeSegmentSetting.builder()
@@ -1921,7 +1921,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                                         .name("数值和")
                                         .segmentType(CONTROL_VALUE_SUM)
                                         .basedType(DATE_CONTROL)
-                                        .pageId(response.getHomePageId())
+                                        .pageId(response.homePageId())
                                         .basedControlId(basedControl.getId())
                                         .targetControlId(targetControl.getId())
                                         .build()))
@@ -1931,16 +1931,16 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().toString()).build(), rAnswerBuilder(targetControl).number(1d).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(1).toString()).build(), rAnswerBuilder(targetControl).number(2d).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(1).toString()).build(), rAnswerBuilder(targetControl).number(3d).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(10).toString()).build(), rAnswerBuilder(targetControl).number(4d).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().toString()).build(), rAnswerBuilder(targetControl).number(1d).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(1).toString()).build(), rAnswerBuilder(targetControl).number(2d).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(1).toString()).build(), rAnswerBuilder(targetControl).number(3d).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(10).toString()).build(), rAnswerBuilder(targetControl).number(4d).build());
 
-        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport qTimeSegmentReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(PER_MONTH, qTimeSegmentReport.getInterval());
         assertEquals(2, qTimeSegmentReport.getSegmentsData().get(0).size());
         assertEquals(2, qTimeSegmentReport.getSegmentsData().get(0).get(0).getValue());
@@ -1954,13 +1954,13 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_bar_report_for_qr_count() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
-        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), numberAttribute, checkboxAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
+        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), numberAttribute, checkboxAttribute);
 
         AttributeBarReport report = AttributeBarReport.builder()
                 .id(newShortUuid())
@@ -1977,21 +1977,21 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(BarReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments = chartReport.getSegmentsData().get(0);
         assertEquals(2, segments.size());
         CategorizedOptionSegment segment1 = segments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
@@ -2003,13 +2003,13 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_bar_report_for_attribute_value_sum() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
-        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), numberAttribute, checkboxAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
+        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), numberAttribute, checkboxAttribute);
 
         AttributeBarReport report = AttributeBarReport.builder()
                 .id(newShortUuid())
@@ -2026,21 +2026,21 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(BarReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(1D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(2D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(1D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(2D).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments = chartReport.getSegmentsData().get(0);
         assertEquals(2, segments.size());
         CategorizedOptionSegment segment1 = segments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
@@ -2052,13 +2052,13 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_bar_report_for_attribute_value_avg() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
-        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), numberAttribute, checkboxAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
+        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), numberAttribute, checkboxAttribute);
 
         AttributeBarReport report = AttributeBarReport.builder()
                 .id(newShortUuid())
@@ -2075,21 +2075,21 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(BarReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(1D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(2D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(1D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(2D).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments = chartReport.getSegmentsData().get(0);
         assertEquals(2, segments.size());
         CategorizedOptionSegment segment1 = segments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
@@ -2101,13 +2101,13 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_bar_report_for_attribute_value_max() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
-        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), numberAttribute, checkboxAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
+        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), numberAttribute, checkboxAttribute);
 
         AttributeBarReport report = AttributeBarReport.builder()
                 .id(newShortUuid())
@@ -2124,21 +2124,21 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(BarReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(1D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(2D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(1D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(2D).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments = chartReport.getSegmentsData().get(0);
         assertEquals(2, segments.size());
         CategorizedOptionSegment segment1 = segments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
@@ -2150,13 +2150,13 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_bar_report_for_attribute_value_min() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
-        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), numberAttribute, checkboxAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
+        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), numberAttribute, checkboxAttribute);
 
         AttributeBarReport report = AttributeBarReport.builder()
                 .id(newShortUuid())
@@ -2173,21 +2173,21 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(BarReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(1D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(2D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(1D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(2D).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments = chartReport.getSegmentsData().get(0);
         assertEquals(2, segments.size());
         CategorizedOptionSegment segment1 = segments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
@@ -2199,13 +2199,13 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_bar_report_for_given_range() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
-        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), numberAttribute, checkboxAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
+        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), numberAttribute, checkboxAttribute);
 
         AttributeBarReport report = AttributeBarReport.builder()
                 .id(newShortUuid())
@@ -2222,25 +2222,25 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(BarReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(1D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(2D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(1D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(2D).build());
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         ReflectionTestUtils.setField(qr, "createdAt", startOfLastMonth());
         qrRepository.save(qr);
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments = chartReport.getSegmentsData().get(0);
         assertEquals(2, segments.size());
         CategorizedOptionSegment segment1 = segments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
@@ -2252,13 +2252,13 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_bar_report_for_given_group() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
-        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), numberAttribute, checkboxAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
+        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), numberAttribute, checkboxAttribute);
 
         AttributeBarReport report = AttributeBarReport.builder()
                 .id(newShortUuid())
@@ -2275,22 +2275,22 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(BarReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        String groupId = GroupApi.createGroup(response.getJwt(), response.getAppId());
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), groupId);
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        String groupId = GroupApi.createGroup(response.jwt(), response.appId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), groupId);
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(1D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(2D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(1D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(2D).build());
 
         ChartReportQuery noGroupQuery = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), noGroupQuery);
+        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), noGroupQuery);
         List<CategorizedOptionSegment> segments = chartReport.getSegmentsData().get(0);
         assertEquals(2, segments.size());
         CategorizedOptionSegment segment1 = segments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
@@ -2299,12 +2299,12 @@ public class ReportControllerApiTest extends BaseApiTest {
         assertEquals(2, segment2.getValue());
 
         ChartReportQuery groupQuery = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .build();
 
-        QCategorizedOptionSegmentReport groupChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), groupQuery);
+        QCategorizedOptionSegmentReport groupChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), groupQuery);
         List<CategorizedOptionSegment> groupSegments = groupChartReport.getSegmentsData().get(0);
         assertEquals(2, groupSegments.size());
         CategorizedOptionSegment groupSegment1 = groupSegments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
@@ -2316,13 +2316,13 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_pie_report() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
-        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), numberAttribute, checkboxAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
+        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), numberAttribute, checkboxAttribute);
 
         AttributePieReport report = AttributePieReport.builder()
                 .id(newShortUuid())
@@ -2339,21 +2339,21 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(PieReportStyle.builder().max(10).colors(List.of(rColor())).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments = chartReport.getSegmentsData().get(0);
         assertEquals(2, segments.size());
         CategorizedOptionSegment segment1 = segments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
@@ -2365,13 +2365,13 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_doughnut_report() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
-        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), numberAttribute, checkboxAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
+        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), numberAttribute, checkboxAttribute);
 
         AttributeDoughnutReport report = AttributeDoughnutReport.builder()
                 .id(newShortUuid())
@@ -2388,21 +2388,21 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(DoughnutReportStyle.builder().max(10).colors(List.of(rColor())).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments = chartReport.getSegmentsData().get(0);
         assertEquals(2, segments.size());
         CategorizedOptionSegment segment1 = segments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
@@ -2414,14 +2414,14 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_number_range_report_for_qr_count() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl basedControl = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl);
-        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), basedAttribute, targetAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl);
+        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), basedAttribute, targetAttribute);
 
         AttributeNumberRangeSegmentReport report = AttributeNumberRangeSegmentReport.builder()
                 .id(newShortUuid())
@@ -2438,19 +2438,19 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(NumberRangeSegmentReportStyle.builder().build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(22D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).number(22D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QNumberRangeSegmentReport chartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QNumberRangeSegmentReport chartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(List.of(10D, 20D, 30D, 40D), chartReport.getNumberRanges());
         assertEquals(2, chartReport.getSegments().get(0).getValue());
         assertEquals(10, chartReport.getSegments().get(0).getSegment());
@@ -2463,14 +2463,14 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_number_range_report_for_attribute_value_sum() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl basedControl = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl);
-        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), basedAttribute, targetAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl);
+        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), basedAttribute, targetAttribute);
 
         AttributeNumberRangeSegmentReport report = AttributeNumberRangeSegmentReport.builder()
                 .id(newShortUuid())
@@ -2488,19 +2488,19 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(NumberRangeSegmentReportStyle.builder().build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(6D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(9D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(6D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(9D).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QNumberRangeSegmentReport chartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QNumberRangeSegmentReport chartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(14, chartReport.getSegments().get(0).getValue());
         assertEquals(6, chartReport.getSegments().get(1).getValue());
         assertEquals(0, chartReport.getSegments().get(2).getValue());
@@ -2509,14 +2509,14 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_number_range_report_for_attribute_value_avg() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl basedControl = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl);
-        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), basedAttribute, targetAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl);
+        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), basedAttribute, targetAttribute);
 
         AttributeNumberRangeSegmentReport report = AttributeNumberRangeSegmentReport.builder()
                 .id(newShortUuid())
@@ -2534,19 +2534,19 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(NumberRangeSegmentReportStyle.builder().build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(6D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(9D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(6D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(9D).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QNumberRangeSegmentReport chartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QNumberRangeSegmentReport chartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(7, chartReport.getSegments().get(0).getValue());
         assertEquals(6, chartReport.getSegments().get(1).getValue());
         assertEquals(0, chartReport.getSegments().get(2).getValue());
@@ -2555,14 +2555,14 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_number_range_report_for_attribute_value_max() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl basedControl = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl);
-        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), basedAttribute, targetAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl);
+        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), basedAttribute, targetAttribute);
 
         AttributeNumberRangeSegmentReport report = AttributeNumberRangeSegmentReport.builder()
                 .id(newShortUuid())
@@ -2580,19 +2580,19 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(NumberRangeSegmentReportStyle.builder().build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(6D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(9D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(6D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(9D).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QNumberRangeSegmentReport chartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QNumberRangeSegmentReport chartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(9, chartReport.getSegments().get(0).getValue());
         assertEquals(6, chartReport.getSegments().get(1).getValue());
         assertEquals(0, chartReport.getSegments().get(2).getValue());
@@ -2601,14 +2601,14 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_number_range_report_for_attribute_value_min() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl basedControl = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl);
-        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), basedAttribute, targetAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl);
+        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), basedAttribute, targetAttribute);
 
         AttributeNumberRangeSegmentReport report = AttributeNumberRangeSegmentReport.builder()
                 .id(newShortUuid())
@@ -2626,19 +2626,19 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(NumberRangeSegmentReportStyle.builder().build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(6D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(9D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(6D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(9D).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QNumberRangeSegmentReport chartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QNumberRangeSegmentReport chartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(5, chartReport.getSegments().get(0).getValue());
         assertEquals(6, chartReport.getSegments().get(1).getValue());
         assertEquals(0, chartReport.getSegments().get(2).getValue());
@@ -2647,14 +2647,14 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_number_range_report_for_given_range() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl basedControl = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl);
-        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), basedAttribute, targetAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl);
+        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), basedAttribute, targetAttribute);
 
         AttributeNumberRangeSegmentReport report = AttributeNumberRangeSegmentReport.builder()
                 .id(newShortUuid())
@@ -2672,23 +2672,23 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(NumberRangeSegmentReportStyle.builder().build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(6D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(9D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(6D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(9D).build());
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         ReflectionTestUtils.setField(qr, "createdAt", startOfLastMonth());
         qrRepository.save(qr);
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QNumberRangeSegmentReport chartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QNumberRangeSegmentReport chartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(9, chartReport.getSegments().get(0).getValue());
         assertEquals(6, chartReport.getSegments().get(1).getValue());
         assertEquals(0, chartReport.getSegments().get(2).getValue());
@@ -2697,14 +2697,14 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_number_range_report_for_given_group() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl basedControl = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl);
-        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), basedAttribute, targetAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl);
+        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), basedAttribute, targetAttribute);
 
         AttributeNumberRangeSegmentReport report = AttributeNumberRangeSegmentReport.builder()
                 .id(newShortUuid())
@@ -2722,21 +2722,21 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(NumberRangeSegmentReportStyle.builder().build())
                 .build();
 
-        String groupId = GroupApi.createGroup(response.getJwt(), response.getAppId());
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), groupId);
+        String groupId = GroupApi.createGroup(response.jwt(), response.appId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), groupId);
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(6D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(9D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).number(22D).build(), rAnswerBuilder(targetControl).number(6D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).number(12D).build(), rAnswerBuilder(targetControl).number(9D).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .build();
 
-        QNumberRangeSegmentReport chartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QNumberRangeSegmentReport chartReport = (QNumberRangeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(5, chartReport.getSegments().get(0).getValue());
         assertEquals(6, chartReport.getSegments().get(1).getValue());
         assertEquals(0, chartReport.getSegments().get(2).getValue());
@@ -2745,14 +2745,14 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_time_segment_report_for_qr_count() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl basedControl = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl);
-        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), basedAttribute, targetAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl);
+        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), basedAttribute, targetAttribute);
 
         AttributeTimeSegmentReport report = AttributeTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -2772,19 +2772,19 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(TimeSegmentReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         ReflectionTestUtils.setField(qr, "createdAt", startOfLastMonth());
         qrRepository.save(qr);
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(2, chartReport.getSegmentsData().get(0).size());
         assertEquals(1, chartReport.getSegmentsData().get(0).get(0).getValue());
         assertEquals(2, chartReport.getSegmentsData().get(0).get(1).getValue());
@@ -2793,12 +2793,12 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_time_segment_report_for_attribute_value_sum() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), targetControl);
-        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), targetAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), targetControl);
+        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), targetAttribute);
 
         AttributeTimeSegmentReport report = AttributeTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -2819,23 +2819,23 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(TimeSegmentReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(6D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(9D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(targetControl).number(6D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(targetControl).number(9D).build());
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         ReflectionTestUtils.setField(qr, "createdAt", startOfLastMonth());
         qrRepository.save(qr);
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(2, chartReport.getSegmentsData().get(0).size());
         assertEquals(5, chartReport.getSegmentsData().get(0).get(0).getValue());
         assertEquals(15, chartReport.getSegmentsData().get(0).get(1).getValue());
@@ -2844,12 +2844,12 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_time_segment_report_for_attribute_value_avg() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), targetControl);
 
-        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), targetAttribute);
+        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), targetAttribute);
 
         AttributeTimeSegmentReport report = AttributeTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -2870,23 +2870,23 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(TimeSegmentReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(6D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(10D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(targetControl).number(6D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(targetControl).number(10D).build());
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         ReflectionTestUtils.setField(qr, "createdAt", startOfLastMonth());
         qrRepository.save(qr);
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(2, chartReport.getSegmentsData().get(0).size());
         assertEquals(5, chartReport.getSegmentsData().get(0).get(0).getValue());
         assertEquals(8, chartReport.getSegmentsData().get(0).get(1).getValue());
@@ -2895,12 +2895,12 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_time_segment_report_for_attribute_value_max() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), targetControl);
 
-        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), targetAttribute);
+        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), targetAttribute);
 
         AttributeTimeSegmentReport report = AttributeTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -2921,23 +2921,23 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(TimeSegmentReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(6D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(10D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(targetControl).number(6D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(targetControl).number(10D).build());
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         ReflectionTestUtils.setField(qr, "createdAt", startOfLastMonth());
         qrRepository.save(qr);
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(2, chartReport.getSegmentsData().get(0).size());
         assertEquals(5, chartReport.getSegmentsData().get(0).get(0).getValue());
         assertEquals(10, chartReport.getSegmentsData().get(0).get(1).getValue());
@@ -2946,12 +2946,12 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_time_segment_report_for_attribute_value_min() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), targetControl);
 
-        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), targetAttribute);
+        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), targetAttribute);
 
         AttributeTimeSegmentReport report = AttributeTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -2972,23 +2972,23 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(TimeSegmentReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(6D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(10D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(targetControl).number(6D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(targetControl).number(10D).build());
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         ReflectionTestUtils.setField(qr, "createdAt", startOfLastMonth());
         qrRepository.save(qr);
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(2, chartReport.getSegmentsData().get(0).size());
         assertEquals(5, chartReport.getSegmentsData().get(0).get(0).getValue());
         assertEquals(6, chartReport.getSegmentsData().get(0).get(1).getValue());
@@ -2997,12 +2997,12 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_time_segment_report_for_given_group() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), targetControl);
 
-        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), targetAttribute);
+        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), targetAttribute);
 
         AttributeTimeSegmentReport report = AttributeTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -3023,25 +3023,25 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(TimeSegmentReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        String groupId = GroupApi.createGroup(response.getJwt(), response.getAppId());
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), groupId);
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        String groupId = GroupApi.createGroup(response.jwt(), response.appId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), groupId);
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(6D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(10D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(targetControl).number(6D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(targetControl).number(10D).build());
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         ReflectionTestUtils.setField(qr, "createdAt", startOfLastMonth());
         qrRepository.save(qr);
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .build();
 
-        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(2, chartReport.getSegmentsData().get(0).size());
         assertEquals(5, chartReport.getSegmentsData().get(0).get(0).getValue());
         assertEquals(10, chartReport.getSegmentsData().get(0).get(1).getValue());
@@ -3050,13 +3050,13 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_chart_report_for_sub_groups() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, checkboxControl);
-        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), numberAttribute, checkboxAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, checkboxControl);
+        Attribute numberAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(numberInputControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), numberAttribute, checkboxAttribute);
 
         AttributeBarReport report = AttributeBarReport.builder()
                 .id(newShortUuid())
@@ -3073,23 +3073,23 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(BarReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        String subGroupId = GroupApi.createGroupWithParent(response.getJwt(), response.getAppId(), response.getDefaultGroupId());
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), subGroupId);
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        String subGroupId = GroupApi.createGroupWithParent(response.jwt(), response.appId(), response.defaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), subGroupId);
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(1D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(2D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl).number(1D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl).number(2D).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
-                .groupId(response.getDefaultGroupId())
+                .groupId(response.defaultGroupId())
                 .build();
 
-        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments = chartReport.getSegmentsData().get(0);
         assertEquals(2, segments.size());
         CategorizedOptionSegment segment1 = segments.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
@@ -3101,12 +3101,12 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_time_segment_report_for_per_season() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), targetControl);
 
-        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), targetAttribute);
+        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), targetAttribute);
 
         AttributeTimeSegmentReport report = AttributeTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -3127,23 +3127,23 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(TimeSegmentReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(6D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(10D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(targetControl).number(6D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(targetControl).number(10D).build());
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         ReflectionTestUtils.setField(qr, "createdAt", startOfLastSeason());
         qrRepository.save(qr);
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(PER_SEASON, chartReport.getInterval());
         assertEquals(2, chartReport.getSegmentsData().get(0).size());
         assertEquals(5, chartReport.getSegmentsData().get(0).get(0).getValue());
@@ -3153,12 +3153,12 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_time_segment_report_for_per_year() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), targetControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), targetControl);
 
-        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), targetAttribute);
+        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), targetAttribute);
 
         AttributeTimeSegmentReport report = AttributeTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -3179,23 +3179,23 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(TimeSegmentReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(5D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(6D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(10D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(targetControl).number(6D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(targetControl).number(10D).build());
 
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         ReflectionTestUtils.setField(qr, "createdAt", startOfLastYear());
         qrRepository.save(qr);
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(PER_YEAR, chartReport.getInterval());
         assertEquals(2, chartReport.getSegmentsData().get(0).size());
         assertEquals(5, chartReport.getSegmentsData().get(0).get(0).getValue());
@@ -3206,12 +3206,12 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_time_segment_report_for_qr_count_with_based_attribute() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FDateControl basedControl = defaultDateControl();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl);
-        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), basedAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl);
+        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), basedAttribute);
 
         AttributeTimeSegmentReport report = AttributeTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -3232,20 +3232,20 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(TimeSegmentReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(1).toString()).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().toString()).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().toString()).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(1).toString()).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().toString()).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().toString()).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(2, chartReport.getSegmentsData().get(0).size());
         assertEquals(1, chartReport.getSegmentsData().get(0).get(0).getValue());
         assertEquals(2, chartReport.getSegmentsData().get(0).get(1).getValue());
@@ -3254,14 +3254,14 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_time_segment_report_for_sum_with_based_attribute() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FDateControl basedControl = defaultDateControl();
         FNumberInputControl targetControl = defaultNumberInputControlBuilder().precision(0).build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl);
-        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), basedAttribute, targetAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl);
+        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute targetAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), basedAttribute, targetAttribute);
 
         AttributeTimeSegmentReport report = AttributeTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -3283,20 +3283,20 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(TimeSegmentReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl).number(3D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(1).toString()).build(), rAnswerBuilder(targetControl).number(3D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().toString()).build(), rAnswerBuilder(targetControl).number(4D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().toString()).build(), rAnswerBuilder(targetControl).number(5D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl).number(3D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(1).toString()).build(), rAnswerBuilder(targetControl).number(3D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().toString()).build(), rAnswerBuilder(targetControl).number(4D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().toString()).build(), rAnswerBuilder(targetControl).number(5D).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(2, chartReport.getSegmentsData().get(0).size());
         assertEquals(3, chartReport.getSegmentsData().get(0).get(0).getValue());
         assertEquals(9, chartReport.getSegmentsData().get(0).get(1).getValue());
@@ -3305,16 +3305,16 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_attribute_time_segment_report_mutiple_itmes() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FDateControl basedControl = defaultDateControl();
         FNumberInputControl targetControl1 = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl targetControl2 = defaultNumberInputControlBuilder().precision(0).build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), basedControl, targetControl1, targetControl2);
-        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute targetAttribute1 = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl1.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute targetAttribute2 = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(targetControl2.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), basedAttribute, targetAttribute1, targetAttribute2);
+        AppApi.updateAppControls(response.jwt(), response.appId(), basedControl, targetControl1, targetControl2);
+        Attribute basedAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(basedControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute targetAttribute1 = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl1.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute targetAttribute2 = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(targetControl2.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), basedAttribute, targetAttribute1, targetAttribute2);
 
         AttributeTimeSegmentReport report = AttributeTimeSegmentReport.builder()
                 .id(newShortUuid())
@@ -3344,20 +3344,20 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(TimeSegmentReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(targetControl1).number(3D).build());
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(1).toString()).build(), rAnswerBuilder(targetControl1).number(3D).build(), rAnswerBuilder(targetControl2).number(6D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().toString()).build(), rAnswerBuilder(targetControl1).number(4D).build(), rAnswerBuilder(targetControl2).number(7D).build());
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().toString()).build(), rAnswerBuilder(targetControl1).number(5D).build(), rAnswerBuilder(targetControl2).number(8D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(targetControl1).number(3D).build());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().minusMonths(1).toString()).build(), rAnswerBuilder(targetControl1).number(3D).build(), rAnswerBuilder(targetControl2).number(6D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().toString()).build(), rAnswerBuilder(targetControl1).number(4D).build(), rAnswerBuilder(targetControl2).number(7D).build());
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(), rAnswerBuilder(basedControl).date(LocalDate.now().toString()).build(), rAnswerBuilder(targetControl1).number(5D).build(), rAnswerBuilder(targetControl2).number(8D).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QTimeSegmentReport chartReport = (QTimeSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         assertEquals(2, chartReport.getSegmentsData().get(0).size());
         assertEquals(3, chartReport.getSegmentsData().get(0).get(0).getValue());
         assertEquals(9, chartReport.getSegmentsData().get(0).get(1).getValue());
@@ -3370,11 +3370,11 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_multiple_report_item_for_control_bar() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl1 = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl numberInputControl2 = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl1, numberInputControl2, checkboxControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl1, numberInputControl2, checkboxControl);
 
         ControlBarReport report = ControlBarReport.builder()
                 .id(newShortUuid())
@@ -3384,7 +3384,7 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .aspectRatio(50)
                 .setting(ControlCategorizedReportSetting.builder()
                         .segmentType(CONTROL_VALUE_SUM)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .basedControlId(checkboxControl.getId())
                         .targetControlIds(List.of(numberInputControl1.getId(), numberInputControl2.getId()))
                         .range(NO_LIMIT)
@@ -3393,20 +3393,20 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .build();
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(),
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(),
                 rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1, optionId2)).build(), rAnswerBuilder(numberInputControl1).number(1d).build(), rAnswerBuilder(numberInputControl2).number(2d).build());
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(),
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(),
                 rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl1).number(3d).build(), rAnswerBuilder(numberInputControl2).number(4d).build());
 
 
-        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QCategorizedOptionSegmentReport qChartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments1 = qChartReport.getSegmentsData().get(0);
         assertEquals(2, segments1.size());
         CategorizedOptionSegment segment1 = segments1.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();
@@ -3425,15 +3425,15 @@ public class ReportControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_multiple_report_item_for_attribute_bar() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         FNumberInputControl numberInputControl1 = defaultNumberInputControlBuilder().precision(0).build();
         FNumberInputControl numberInputControl2 = defaultNumberInputControlBuilder().precision(0).build();
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl1, numberInputControl2, checkboxControl);
-        Attribute numberAttribute1 = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(numberInputControl1.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute numberAttribute2 = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(numberInputControl2.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), numberAttribute1, numberAttribute2, checkboxAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl1, numberInputControl2, checkboxControl);
+        Attribute numberAttribute1 = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(numberInputControl1.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute numberAttribute2 = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(numberInputControl2.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute checkboxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(checkboxControl.getId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), numberAttribute1, numberAttribute2, checkboxAttribute);
 
         AttributeBarReport report = AttributeBarReport.builder()
                 .id(newShortUuid())
@@ -3450,27 +3450,27 @@ public class ReportControllerApiTest extends BaseApiTest {
                 .style(BarReportStyle.builder().max(10).colors(List.of()).build())
                 .build();
 
-        CreateQrResponse qr1 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
-        CreateQrResponse qr2 = QrApi.createQr(response.getJwt(), response.getDefaultGroupId());
+        CreateQrResponse qr1 = QrApi.createQr(response.jwt(), response.defaultGroupId());
+        CreateQrResponse qr2 = QrApi.createQr(response.jwt(), response.defaultGroupId());
 
         String optionId1 = checkboxControl.getOptions().get(0).getId();
         String optionId2 = checkboxControl.getOptions().get(1).getId();
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(),
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(),
                 rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1, optionId2)).build(), rAnswerBuilder(numberInputControl1).number(1D).build(), rAnswerBuilder(numberInputControl2).number(2D).build());
 
-        SubmissionApi.newSubmission(response.getJwt(), qr1.getQrId(), response.getHomePageId(),
+        SubmissionApi.newSubmission(response.jwt(), qr1.getQrId(), response.homePageId(),
                 rAnswerBuilder(checkboxControl).optionIds(List.of(optionId1)).build(), rAnswerBuilder(numberInputControl1).number(3D).build(), rAnswerBuilder(numberInputControl2).number(4D).build());
 
-        SubmissionApi.newSubmission(response.getJwt(), qr2.getQrId(), response.getHomePageId(),
+        SubmissionApi.newSubmission(response.jwt(), qr2.getQrId(), response.homePageId(),
                 rAnswerBuilder(checkboxControl).optionIds(List.of(optionId2)).build(), rAnswerBuilder(numberInputControl1).number(5D).build(), rAnswerBuilder(numberInputControl2).number(6D).build());
 
         ChartReportQuery query = ChartReportQuery.builder()
-                .appId(response.getAppId())
+                .appId(response.appId())
                 .report(report)
                 .build();
 
-        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.getJwt(), query);
+        QCategorizedOptionSegmentReport chartReport = (QCategorizedOptionSegmentReport) ReportApi.fetchChartReport(response.jwt(), query);
         List<CategorizedOptionSegment> segments1 = chartReport.getSegmentsData().get(0);
         assertEquals(2, segments1.size());
         CategorizedOptionSegment segment1 = segments1.stream().filter(segment -> segment.getOption().equals(optionId1)).findFirst().get();

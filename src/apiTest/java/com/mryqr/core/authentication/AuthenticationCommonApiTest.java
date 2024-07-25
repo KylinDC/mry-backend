@@ -54,14 +54,14 @@ public class AuthenticationCommonApiTest extends BaseApiTest {
     public void should_authenticate_with_api_key() {
         PreparedAppResponse response = setupApi.registerWithApp();
 
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         BaseApiTest.given()
                 .auth().preemptive()
                 .basic(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret())
                 .when()
-                .get("/integration/apps/{appId}", response.getAppId())
+                .get("/integration/apps/{appId}", response.appId())
                 .then()
                 .statusCode(200);
     }
@@ -88,13 +88,13 @@ public class AuthenticationCommonApiTest extends BaseApiTest {
     @Test
     public void should_fail_api_authentication_if_developer_not_enabled() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
 
         BaseApiTest.given()
                 .auth().preemptive()
                 .basic(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret())
                 .when()
-                .get("/integration/apps/{appId}", response.getAppId())
+                .get("/integration/apps/{appId}", response.appId())
                 .then()
                 .statusCode(401);
     }
@@ -102,14 +102,14 @@ public class AuthenticationCommonApiTest extends BaseApiTest {
     @Test
     public void should_fail_api_authentication_if_credential_not_match() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
 
         BaseApiTest.given()
                 .auth().preemptive()
                 .basic(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret() + "random")
                 .when()
-                .get("/integration/apps/{appId}", response.getAppId())
+                .get("/integration/apps/{appId}", response.appId())
                 .then()
                 .statusCode(401);
     }
@@ -117,8 +117,8 @@ public class AuthenticationCommonApiTest extends BaseApiTest {
     @Test
     public void should_fail_api_authentication_if_tenant_not_active() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        setupApi.updateTenantPackages(response.getTenantId(), FLAGSHIP);
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        setupApi.updateTenantPackages(response.tenantId(), FLAGSHIP);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         tenant.deactivate(NOUSER);
         tenantRepository.save(tenant);
 
@@ -126,7 +126,7 @@ public class AuthenticationCommonApiTest extends BaseApiTest {
                 .auth().preemptive()
                 .basic(tenant.getApiSetting().getApiKey(), tenant.getApiSetting().getApiSecret())
                 .when()
-                .get("/integration/apps/{appId}", response.getAppId())
+                .get("/integration/apps/{appId}", response.appId())
                 .then()
                 .statusCode(401);
     }
@@ -134,7 +134,7 @@ public class AuthenticationCommonApiTest extends BaseApiTest {
     @Test
     public void should_auto_refresh_jwt_if_near_expire() {
         LoginResponse response = setupApi.registerWithLogin(rMobile(), rPassword());
-        String nearExpireJwt = jwtService.generateJwt(response.getMemberId(), new Date(new Date().getTime() + 60L * 1000L));
+        String nearExpireJwt = jwtService.generateJwt(response.memberId(), new Date(new Date().getTime() + 60L * 1000L));
 
         ListMyManagedAppsQuery queryCommand = ListMyManagedAppsQuery.builder().pageIndex(1).pageSize(10).build();
         Cookie cookie = BaseApiTest.given(nearExpireJwt)

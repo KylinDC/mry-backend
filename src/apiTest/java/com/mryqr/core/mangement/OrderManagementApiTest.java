@@ -128,7 +128,7 @@ public class OrderManagementApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
         Order order = orderRepository.byId(orderResponse.getId());
         QR qr = qrRepository.byCustomId(ORDER_APP_ID, order.getId());
         Tenant tenant = tenantRepository.byId(order.getTenantId());
@@ -179,7 +179,7 @@ public class OrderManagementApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId");
 
         QR qr = qrRepository.byCustomId(ORDER_APP_ID, orderResponse.getId());
@@ -227,7 +227,7 @@ public class OrderManagementApiTest extends BaseApiTest {
                 .paymentType(WX_TRANSFER)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.jwt(), command);
         QR qr = qrRepository.byCustomId(ORDER_APP_ID, orderResponse.getId());
         assertNotNull(qr);
 
@@ -277,7 +277,7 @@ public class OrderManagementApiTest extends BaseApiTest {
                 .paymentType(BANK_TRANSFER)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.jwt(), command);
         QR qr = qrRepository.byCustomId(ORDER_APP_ID, orderResponse.getId());
         assertNotNull(qr);
 
@@ -331,7 +331,7 @@ public class OrderManagementApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.jwt(), command);
         QR qr = qrRepository.byCustomId(ORDER_APP_ID, orderResponse.getId());
         assertNotNull(qr);
 
@@ -365,7 +365,7 @@ public class OrderManagementApiTest extends BaseApiTest {
     public void should_issue_invoice_for_order() {
         LoginResponse response = setupApi.registerWithLogin();
 
-        TenantApi.updateInvoiceTitle(response.getJwt(), UpdateTenantInvoiceTitleCommand.builder()
+        TenantApi.updateInvoiceTitle(response.jwt(), UpdateTenantInvoiceTitleCommand.builder()
                 .title(InvoiceTitle.builder()
                         .title("成都码如云信息技术有限公司")
                         .unifiedCode("124403987955856482")
@@ -392,9 +392,9 @@ public class OrderManagementApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId");
-        OrderApi.requestInvoice(response.getJwt(), orderResponse.getId(), RequestInvoiceCommand.builder().type(VAT_NORMAL).email(rEmail()).build());
+        OrderApi.requestInvoice(response.jwt(), orderResponse.getId(), RequestInvoiceCommand.builder().type(VAT_NORMAL).email(rEmail()).build());
 
         QR qr = qrRepository.byCustomId(ORDER_APP_ID, orderResponse.getId());
         assertNotNull(qr);
@@ -438,7 +438,7 @@ public class OrderManagementApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.jwt(), command);
         QR qr = qrRepository.byCustomId(ORDER_APP_ID, orderResponse.getId());
         assertNotNull(qr);
 
@@ -492,7 +492,7 @@ public class OrderManagementApiTest extends BaseApiTest {
                 .build();
 
         String jwt = LoginApi.loginWithMobileOrEmail(ADMIN_INIT_MOBILE, ADMIN_INIT_PASSWORD);
-        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.jwt(), command);
         Order order = orderRepository.byId(orderResponse.getId());
         QR qr = qrRepository.byCustomId(ORDER_APP_ID, orderResponse.getId());
         App orderManageApp = appRepository.byId(ORDER_APP_ID);

@@ -108,10 +108,10 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
 
         Order order = orderRepository.byId(orderResponse.getId());
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         assertNotNull(orderResponse.getWxPayQrUrl());
         assertEquals(order.getWxPayQrUrl(), orderResponse.getWxPayQrUrl());
         assertEquals(order.getPrice(), orderResponse.getPrice());
@@ -136,7 +136,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(BANK_TRANSFER)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
 
         assertNull(orderResponse.getWxPayQrUrl());
         assertEquals(BANK_TRANSFER, orderResponse.getPaymentType());
@@ -146,7 +146,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_create_extra_member_order() {
         LoginResponse loginResponse = setupApi.registerWithLogin();
-        setupApi.updateTenantPackages(loginResponse.getTenantId(), ADVANCED);
+        setupApi.updateTenantPackages(loginResponse.tenantId(), ADVANCED);
 
         CreateOrderCommand command = CreateOrderCommand.builder()
                 .detail(ExtraMemberOrderDetail.builder()
@@ -156,7 +156,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.jwt(), command);
         Order order = orderRepository.byId(orderResponse.getId());
         assertEquals("2000.00", orderResponse.getPrice().getDiscountedTotalPrice());
         assertTrue(order.getDetail() instanceof ExtraMemberOrderDetail);
@@ -165,7 +165,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_create_extra_sms_order() {
         LoginResponse loginResponse = setupApi.registerWithLogin();
-        setupApi.updateTenantPackages(loginResponse.getTenantId(), ADVANCED);
+        setupApi.updateTenantPackages(loginResponse.tenantId(), ADVANCED);
 
         CreateOrderCommand command = CreateOrderCommand.builder()
                 .detail(ExtraSmsOrderDetail.builder()
@@ -175,7 +175,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.jwt(), command);
         Order order = orderRepository.byId(orderResponse.getId());
         assertEquals("160.00", orderResponse.getPrice().getDiscountedTotalPrice());
         assertTrue(order.getDetail() instanceof ExtraSmsOrderDetail);
@@ -184,7 +184,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_create_extra_storage_order() {
         LoginResponse loginResponse = setupApi.registerWithLogin();
-        setupApi.updateTenantPackages(loginResponse.getTenantId(), ADVANCED);
+        setupApi.updateTenantPackages(loginResponse.tenantId(), ADVANCED);
 
         CreateOrderCommand command = CreateOrderCommand.builder()
                 .detail(ExtraStorageOrderDetail.builder()
@@ -194,7 +194,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.jwt(), command);
         Order order = orderRepository.byId(orderResponse.getId());
         assertEquals("300.00", orderResponse.getPrice().getDiscountedTotalPrice());
         assertTrue(order.getDetail() instanceof ExtraStorageOrderDetail);
@@ -203,7 +203,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_create_extra_video_traffic_order() {
         LoginResponse loginResponse = setupApi.registerWithLogin();
-        setupApi.updateTenantPackages(loginResponse.getTenantId(), ADVANCED);
+        setupApi.updateTenantPackages(loginResponse.tenantId(), ADVANCED);
 
         CreateOrderCommand command = CreateOrderCommand.builder()
                 .detail(ExtraVideoTrafficOrderDetail.builder()
@@ -213,7 +213,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.jwt(), command);
         Order order = orderRepository.byId(orderResponse.getId());
 
         assertEquals("20.00", orderResponse.getPrice().getDiscountedTotalPrice());
@@ -239,7 +239,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(loginResponse.jwt(), command);
         Order order = orderRepository.byId(orderResponse.getId());
 
         assertEquals("400.00", orderResponse.getPrice().getDiscountedTotalPrice());
@@ -260,15 +260,15 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        assertError(() -> OrderApi.createOrderRaw(response.getJwt(), command), PACKAGE_DURATION_TOO_LONG);
+        assertError(() -> OrderApi.createOrderRaw(response.jwt(), command), PACKAGE_DURATION_TOO_LONG);
     }
 
     @Test
     public void should_fail_create_extra_member_order_if_reached_max_member_size() {
         LoginResponse loginResponse = setupApi.registerWithLogin();
-        setupApi.updateTenantPackages(loginResponse.getTenantId(), ADVANCED);
+        setupApi.updateTenantPackages(loginResponse.tenantId(), ADVANCED);
 
-        Tenant tenant = tenantRepository.byId(loginResponse.getTenantId());
+        Tenant tenant = tenantRepository.byId(loginResponse.tenantId());
         tenant.getPackages().increaseExtraMemberCount(8000);
         tenantRepository.save(tenant);
 
@@ -280,15 +280,15 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        assertError(() -> OrderApi.createOrderRaw(loginResponse.getJwt(), command), MAX_TENANT_MEMBER_SIZE_REACHED);
+        assertError(() -> OrderApi.createOrderRaw(loginResponse.jwt(), command), MAX_TENANT_MEMBER_SIZE_REACHED);
     }
 
     @Test
     public void should_fail_create_extra_storage_order_if_reached_max_storage_size() {
         LoginResponse loginResponse = setupApi.registerWithLogin();
-        setupApi.updateTenantPackages(loginResponse.getTenantId(), ADVANCED);
+        setupApi.updateTenantPackages(loginResponse.tenantId(), ADVANCED);
 
-        Tenant tenant = tenantRepository.byId(loginResponse.getTenantId());
+        Tenant tenant = tenantRepository.byId(loginResponse.tenantId());
         tenant.getPackages().increaseExtraStorage(8000);
         tenantRepository.save(tenant);
 
@@ -300,15 +300,15 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        assertError(() -> OrderApi.createOrderRaw(loginResponse.getJwt(), command), MAX_EXTRA_STORAGE_REACHED);
+        assertError(() -> OrderApi.createOrderRaw(loginResponse.jwt(), command), MAX_EXTRA_STORAGE_REACHED);
     }
 
     @Test
     public void should_fail_create_extra_video_traffic_order_if_reached_max_size() {
         LoginResponse loginResponse = setupApi.registerWithLogin();
-        setupApi.updateTenantPackages(loginResponse.getTenantId(), ADVANCED);
+        setupApi.updateTenantPackages(loginResponse.tenantId(), ADVANCED);
 
-        Tenant tenant = tenantRepository.byId(loginResponse.getTenantId());
+        Tenant tenant = tenantRepository.byId(loginResponse.tenantId());
         tenant.getPackages().increaseExtraVideoTraffic(8000);
         tenantRepository.save(tenant);
 
@@ -320,7 +320,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        assertError(() -> OrderApi.createOrderRaw(loginResponse.getJwt(), command), MAX_VIDEO_TRAFFIC_REACHED);
+        assertError(() -> OrderApi.createOrderRaw(loginResponse.jwt(), command), MAX_VIDEO_TRAFFIC_REACHED);
     }
 
     @Test
@@ -335,7 +335,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        assertError(() -> OrderApi.createOrderRaw(response.getJwt(), command), ORDER_REQUIRE_NON_FREE_PLAN);
+        assertError(() -> OrderApi.createOrderRaw(response.jwt(), command), ORDER_REQUIRE_NON_FREE_PLAN);
     }
 
     @Test
@@ -350,7 +350,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.getJwt(), query);
+        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.jwt(), query);
         OrderPrice price = quotation.getPrice();
         assertNull(price.getOriginalUpgradePrice());
         assertEquals("2760.00", price.getOriginalRenewalPrice());
@@ -363,7 +363,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_request_quote_for_expired_plan() {
         LoginResponse loginResponse = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(loginResponse.getTenantId());
+        Tenant tenant = tenantRepository.byId(loginResponse.tenantId());
         setupApi.updateTenantPackages(tenant, BASIC, Instant.now().minus(10, DAYS));
 
         QuotePriceQuery query = QuotePriceQuery.builder()
@@ -374,7 +374,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.getJwt(), query);
+        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.jwt(), query);
         OrderPrice price = quotation.getPrice();
         assertNull(price.getOriginalUpgradePrice());
         assertEquals("2760.00", price.getOriginalRenewalPrice());
@@ -387,7 +387,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_request_quote_for_non_free_plan_for_upgrade_only() {
         LoginResponse loginResponse = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(loginResponse.getTenantId());
+        Tenant tenant = tenantRepository.byId(loginResponse.tenantId());
         setupApi.updateTenantPackages(tenant, BASIC, Instant.now().plus(181, DAYS));
 
         QuotePriceQuery query = QuotePriceQuery.builder()
@@ -398,7 +398,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.getJwt(), query);
+        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.jwt(), query);
         OrderPrice price = quotation.getPrice();
         assertNull(price.getOriginalRenewalPrice());
 
@@ -413,7 +413,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_request_quote_for_non_free_plan_for_renewal_only() {
         LoginResponse loginResponse = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(loginResponse.getTenantId());
+        Tenant tenant = tenantRepository.byId(loginResponse.tenantId());
         setupApi.updateTenantPackages(tenant, BASIC, Instant.now().plus(181, DAYS));
 
         QuotePriceQuery query = QuotePriceQuery.builder()
@@ -424,7 +424,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.getJwt(), query);
+        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.jwt(), query);
         OrderPrice price = quotation.getPrice();
         assertNull(price.getOriginalUpgradePrice());
 
@@ -438,7 +438,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_request_quote_for_non_free_plan_for_renewal_and_upgrade() {
         LoginResponse loginResponse = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.byId(loginResponse.getTenantId());
+        Tenant tenant = tenantRepository.byId(loginResponse.tenantId());
         setupApi.updateTenantPackages(tenant, BASIC, Instant.now().plus(181, DAYS));
 
         QuotePriceQuery query = QuotePriceQuery.builder()
@@ -449,7 +449,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.getJwt(), query);
+        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.jwt(), query);
         OrderPrice price = quotation.getPrice();
 
         assertEquals("3106.85", price.getOriginalUpgradePrice());
@@ -488,7 +488,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        assertError(() -> OrderApi.requestQuoteRaw(loginResponse.getJwt(), query), PURCHASE_FREE_PLAN_NOT_ALLOWED);
+        assertError(() -> OrderApi.requestQuoteRaw(loginResponse.jwt(), query), PURCHASE_FREE_PLAN_NOT_ALLOWED);
     }
 
     @Test
@@ -503,14 +503,14 @@ public class OrderControllerApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        assertError(() -> OrderApi.requestQuoteRaw(loginResponse.getJwt(), query), UPGRADE_FREE_PLAN_NOT_ALLOWED);
+        assertError(() -> OrderApi.requestQuoteRaw(loginResponse.jwt(), query), UPGRADE_FREE_PLAN_NOT_ALLOWED);
     }
 
     @Test
     public void should_fail_request_quote_if_renewal_only_for_same_plan() {
         LoginResponse loginResponse = setupApi.registerWithLogin();
 
-        Tenant tenant = tenantRepository.byId(loginResponse.getTenantId());
+        Tenant tenant = tenantRepository.byId(loginResponse.tenantId());
         setupApi.updateTenantPackages(tenant, BASIC, Instant.now().plus(181, DAYS));
 
         QuotePriceQuery query = QuotePriceQuery.builder()
@@ -521,14 +521,14 @@ public class OrderControllerApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        assertError(() -> OrderApi.requestQuoteRaw(loginResponse.getJwt(), query), UPGRADE_TO_SAME_PLAN_NOT_ALLOWED);
+        assertError(() -> OrderApi.requestQuoteRaw(loginResponse.jwt(), query), UPGRADE_TO_SAME_PLAN_NOT_ALLOWED);
     }
 
     @Test
     public void should_fail_request_quote_if_downgrade() {
         LoginResponse loginResponse = setupApi.registerWithLogin();
 
-        Tenant tenant = tenantRepository.byId(loginResponse.getTenantId());
+        Tenant tenant = tenantRepository.byId(loginResponse.tenantId());
         setupApi.updateTenantPackages(tenant, ADVANCED, Instant.now().plus(181, DAYS));
 
         QuotePriceQuery query = QuotePriceQuery.builder()
@@ -539,13 +539,13 @@ public class OrderControllerApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        assertError(() -> OrderApi.requestQuoteRaw(loginResponse.getJwt(), query), DOWNGRADE_PLAN_NOT_ALLOWED);
+        assertError(() -> OrderApi.requestQuoteRaw(loginResponse.jwt(), query), DOWNGRADE_PLAN_NOT_ALLOWED);
     }
 
     @Test
     public void should_request_quote_for_extra_member() {
         LoginResponse loginResponse = setupApi.registerWithLogin();
-        setupApi.updateTenantPackages(loginResponse.getTenantId(), ADVANCED);
+        setupApi.updateTenantPackages(loginResponse.tenantId(), ADVANCED);
 
         QuotePriceQuery query = QuotePriceQuery.builder()
                 .detail(ExtraMemberOrderDetail.builder()
@@ -554,7 +554,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.getJwt(), query);
+        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.jwt(), query);
         OrderPrice price = quotation.getPrice();
 
         assertNull(price.getOriginalUpgradePrice());
@@ -568,7 +568,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_request_quote_for_extra_sms() {
         LoginResponse loginResponse = setupApi.registerWithLogin();
-        setupApi.updateTenantPackages(loginResponse.getTenantId(), ADVANCED);
+        setupApi.updateTenantPackages(loginResponse.tenantId(), ADVANCED);
 
         QuotePriceQuery query = QuotePriceQuery.builder()
                 .detail(ExtraSmsOrderDetail.builder()
@@ -577,7 +577,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.getJwt(), query);
+        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.jwt(), query);
         OrderPrice price = quotation.getPrice();
 
         assertNull(price.getOriginalUpgradePrice());
@@ -591,7 +591,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_request_quote_for_extra_storage() {
         LoginResponse loginResponse = setupApi.registerWithLogin();
-        setupApi.updateTenantPackages(loginResponse.getTenantId(), ADVANCED);
+        setupApi.updateTenantPackages(loginResponse.tenantId(), ADVANCED);
 
         QuotePriceQuery query = QuotePriceQuery.builder()
                 .detail(ExtraStorageOrderDetail.builder()
@@ -600,7 +600,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.getJwt(), query);
+        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.jwt(), query);
         OrderPrice price = quotation.getPrice();
 
         assertNull(price.getOriginalUpgradePrice());
@@ -614,7 +614,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_request_quote_for_extra_video_traffic() {
         LoginResponse loginResponse = setupApi.registerWithLogin();
-        setupApi.updateTenantPackages(loginResponse.getTenantId(), ADVANCED);
+        setupApi.updateTenantPackages(loginResponse.tenantId(), ADVANCED);
 
         QuotePriceQuery query = QuotePriceQuery.builder()
                 .detail(ExtraVideoTrafficOrderDetail.builder()
@@ -623,7 +623,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.getJwt(), query);
+        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.jwt(), query);
         OrderPrice price = quotation.getPrice();
 
         assertNull(price.getOriginalUpgradePrice());
@@ -654,7 +654,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.getJwt(), query);
+        QPriceQuotation quotation = OrderApi.requestQuote(loginResponse.jwt(), query);
         OrderPrice price = quotation.getPrice();
 
         assertNull(price.getOriginalUpgradePrice());
@@ -679,15 +679,15 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
-        OrderStatus orderStatus = OrderApi.fetchOrderStatus(response.getJwt(), orderResponse.getId());
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
+        OrderStatus orderStatus = OrderApi.fetchOrderStatus(response.jwt(), orderResponse.getId());
         assertEquals(CREATED, orderStatus);
     }
 
     @Test
     public void should_stub_notify_plan_order_paid() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant initialTenant = tenantRepository.byId(response.getTenantId());
+        Tenant initialTenant = tenantRepository.byId(response.tenantId());
 
         CreateOrderCommand command = CreateOrderCommand.builder()
                 .detail(PlanOrderDetail.builder()
@@ -698,7 +698,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
 
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId");
 
@@ -708,7 +708,7 @@ public class OrderControllerApiTest extends BaseApiTest {
         assertNotNull(order.getPaidAt());
         assertEquals("fakeWxPayTxnId", order.getWxTxnId());
 
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         Packages packages = tenant.getPackages();
         assertEquals(ADVANCED, packages.currentPlanType());
         assertEquals(LocalDate.now().plusYears(2).toString(), LocalDate.ofInstant(packages.expireAt(), systemDefault()).toString());
@@ -718,7 +718,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_stub_notify_extra_member_order_paid() {
         LoginResponse response = setupApi.registerWithLogin();
-        setupApi.updateTenantPackages(response.getTenantId(), ADVANCED);
+        setupApi.updateTenantPackages(response.tenantId(), ADVANCED);
 
         CreateOrderCommand command = CreateOrderCommand.builder()
                 .detail(ExtraMemberOrderDetail.builder()
@@ -728,7 +728,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId");
 
         Order order = orderRepository.byId(orderResponse.getId());
@@ -737,14 +737,14 @@ public class OrderControllerApiTest extends BaseApiTest {
         assertNotNull(order.getPaidAt());
         assertEquals("fakeWxPayTxnId", order.getWxTxnId());
 
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         assertEquals(10, tenant.getPackages().getExtraMemberCount());
     }
 
     @Test
     public void should_stub_notify_extra_sms_order_paid() {
         LoginResponse response = setupApi.registerWithLogin();
-        setupApi.updateTenantPackages(response.getTenantId(), ADVANCED);
+        setupApi.updateTenantPackages(response.tenantId(), ADVANCED);
 
         CreateOrderCommand command = CreateOrderCommand.builder()
                 .detail(ExtraSmsOrderDetail.builder()
@@ -754,7 +754,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId");
 
         Order order = orderRepository.byId(orderResponse.getId());
@@ -763,14 +763,14 @@ public class OrderControllerApiTest extends BaseApiTest {
         assertNotNull(order.getPaidAt());
         assertEquals("fakeWxPayTxnId", order.getWxTxnId());
 
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         assertEquals(2000, tenant.getPackages().getExtraRemainSmsCount());
     }
 
     @Test
     public void should_stub_notify_extra_storage_order_paid() {
         LoginResponse response = setupApi.registerWithLogin();
-        setupApi.updateTenantPackages(response.getTenantId(), ADVANCED);
+        setupApi.updateTenantPackages(response.tenantId(), ADVANCED);
 
         CreateOrderCommand command = CreateOrderCommand.builder()
                 .detail(ExtraStorageOrderDetail.builder()
@@ -780,7 +780,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId");
 
         Order order = orderRepository.byId(orderResponse.getId());
@@ -789,14 +789,14 @@ public class OrderControllerApiTest extends BaseApiTest {
         assertNotNull(order.getPaidAt());
         assertEquals("fakeWxPayTxnId", order.getWxTxnId());
 
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         assertEquals(10, tenant.getPackages().getExtraStorage());
     }
 
     @Test
     public void should_stub_notify_extra_video_traffic_order_paid() {
         LoginResponse response = setupApi.registerWithLogin();
-        setupApi.updateTenantPackages(response.getTenantId(), ADVANCED);
+        setupApi.updateTenantPackages(response.tenantId(), ADVANCED);
 
         CreateOrderCommand command = CreateOrderCommand.builder()
                 .detail(ExtraVideoTrafficOrderDetail.builder()
@@ -806,7 +806,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId");
 
         Order order = orderRepository.byId(orderResponse.getId());
@@ -815,7 +815,7 @@ public class OrderControllerApiTest extends BaseApiTest {
         assertNotNull(order.getPaidAt());
         assertEquals("fakeWxPayTxnId", order.getWxTxnId());
 
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         assertEquals(100, tenant.getPackages().getExtraRemainVideoTraffic());
     }
 
@@ -839,7 +839,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId");
 
         Order order = orderRepository.byId(orderResponse.getId());
@@ -852,7 +852,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_only_update_wx_info_if_called_repeatedly() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant initialTenant = tenantRepository.byId(response.getTenantId());
+        Tenant initialTenant = tenantRepository.byId(response.tenantId());
 
         CreateOrderCommand command = CreateOrderCommand.builder()
                 .detail(PlanOrderDetail.builder()
@@ -863,7 +863,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
 
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId");
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId1");
@@ -876,7 +876,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_stub_notify_order_paid_after_bank_transfer() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant initialTenant = tenantRepository.byId(response.getTenantId());
+        Tenant initialTenant = tenantRepository.byId(response.tenantId());
 
         CreateOrderCommand command = CreateOrderCommand.builder()
                 .detail(PlanOrderDetail.builder()
@@ -887,7 +887,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(BANK_TRANSFER)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
 
         StubOrderPaidNotifyApi.notifyBankTransferPaid(orderResponse.getId(), "fakeBankTransferAccountId");
 
@@ -897,7 +897,7 @@ public class OrderControllerApiTest extends BaseApiTest {
         assertNotNull(order.getPaidAt());
         assertEquals("fakeBankTransferAccountId", order.getBankTransferAccountId());
 
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         Packages packages = tenant.getPackages();
         assertEquals(ADVANCED, packages.currentPlanType());
         assertEquals(LocalDate.now().plusYears(2).toString(), LocalDate.ofInstant(packages.expireAt(), systemDefault()).toString());
@@ -907,7 +907,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_only_update_bank_transfer_pay_info_if_called_repeatedly() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant initialTenant = tenantRepository.byId(response.getTenantId());
+        Tenant initialTenant = tenantRepository.byId(response.tenantId());
 
         CreateOrderCommand command = CreateOrderCommand.builder()
                 .detail(PlanOrderDetail.builder()
@@ -918,7 +918,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(BANK_TRANSFER)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
 
         StubOrderPaidNotifyApi.notifyBankTransferPaid(orderResponse.getId(), "fakeBankTransferAccountId");
         StubOrderPaidNotifyApi.notifyBankTransferPaid(orderResponse.getId(), "fakeBankTransferAccountId1");
@@ -931,7 +931,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_stub_notify_order_paid_after_wx_transfer() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant initialTenant = tenantRepository.byId(response.getTenantId());
+        Tenant initialTenant = tenantRepository.byId(response.tenantId());
 
         CreateOrderCommand command = CreateOrderCommand.builder()
                 .detail(PlanOrderDetail.builder()
@@ -942,7 +942,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_TRANSFER)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxTransferPaid(orderResponse.getId());
 
         Order order = orderRepository.byId(orderResponse.getId());
@@ -951,7 +951,7 @@ public class OrderControllerApiTest extends BaseApiTest {
         assertNotNull(order.getPaidAt());
         assertFalse(order.getScreenShots().isEmpty());
 
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         Packages packages = tenant.getPackages();
         assertEquals(ADVANCED, packages.currentPlanType());
         assertEquals(LocalDate.now().plusYears(2).toString(), LocalDate.ofInstant(packages.expireAt(), systemDefault()).toString());
@@ -961,9 +961,9 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_not_apply_plan_order_if_plan_version_not_match() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant initialTenant = tenantRepository.byId(response.getTenantId());
+        Tenant initialTenant = tenantRepository.byId(response.tenantId());
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), CreateOrderCommand.builder()
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), CreateOrderCommand.builder()
                 .detail(PlanOrderDetail.builder()
                         .type(PLAN)
                         .planType(BASIC)
@@ -972,7 +972,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build());
 
-        CreateOrderResponse anotherOrderResponse = OrderApi.createOrder(response.getJwt(), CreateOrderCommand.builder()
+        CreateOrderResponse anotherOrderResponse = OrderApi.createOrder(response.jwt(), CreateOrderCommand.builder()
                 .detail(PlanOrderDetail.builder()
                         .type(PLAN)
                         .planType(ADVANCED)
@@ -990,7 +990,7 @@ public class OrderControllerApiTest extends BaseApiTest {
         assertNotNull(order.getPaidAt());
         assertEquals("fakeWxPayTxnId", order.getWxTxnId());
 
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         Packages packages = tenant.getPackages();
         assertEquals(BASIC, packages.currentPlanType());
         assertEquals(LocalDate.now().plusYears(2).toString(), LocalDate.ofInstant(packages.expireAt(), systemDefault()).toString());
@@ -1017,7 +1017,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), rWxPayTxnId());
 
         Delivery delivery = Delivery.builder()
@@ -1035,7 +1035,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     public void should_issue_invoice() {
         LoginResponse response = setupApi.registerWithLogin();
 
-        TenantApi.updateInvoiceTitle(response.getJwt(), UpdateTenantInvoiceTitleCommand.builder()
+        TenantApi.updateInvoiceTitle(response.jwt(), UpdateTenantInvoiceTitleCommand.builder()
                 .title(InvoiceTitle.builder()
                         .title("成都码如云信息技术有限公司")
                         .unifiedCode("124403987955856482")
@@ -1062,9 +1062,9 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId");
-        OrderApi.requestInvoice(response.getJwt(), orderResponse.getId(), RequestInvoiceCommand.builder().type(VAT_NORMAL).email(rEmail()).build());
+        OrderApi.requestInvoice(response.jwt(), orderResponse.getId(), RequestInvoiceCommand.builder().type(VAT_NORMAL).email(rEmail()).build());
 
         List<UploadedFile> invoices = List.of(rUploadedFile());
         orderCommandService.issueInvoice(orderResponse.getId(), invoices, NOUSER);
@@ -1093,7 +1093,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId");
 
         orderCommandService.refund(orderResponse.getId(), "正常退款", NOUSER);
@@ -1104,7 +1104,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_list_orders() {
         LoginResponse response = setupApi.registerWithLogin();
-        setupApi.updateTenantPackages(response.getTenantId(), ADVANCED);
+        setupApi.updateTenantPackages(response.tenantId(), ADVANCED);
 
         CreateOrderCommand command = CreateOrderCommand.builder()
                 .detail(ExtraMemberOrderDetail.builder()
@@ -1114,10 +1114,10 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId");
 
-        CreateOrderResponse secondOrderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse secondOrderResponse = OrderApi.createOrder(response.jwt(), command);
 
         ListOrdersQuery ordersQuery = ListOrdersQuery.builder()
                 .pageIndex(1)
@@ -1125,7 +1125,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .build();
 
         Order order = orderRepository.byId(orderResponse.getId());
-        PagedList<QListOrder> orders = OrderApi.listOrders(response.getJwt(), ordersQuery);
+        PagedList<QListOrder> orders = OrderApi.listOrders(response.jwt(), ordersQuery);
         assertEquals(1, orders.getData().size());
         QListOrder listOrder = orders.getData().get(0);
         assertEquals(order.getId(), listOrder.getId());
@@ -1142,7 +1142,7 @@ public class OrderControllerApiTest extends BaseApiTest {
     @Test
     public void should_search_listed_orders() {
         LoginResponse response = setupApi.registerWithLogin();
-        setupApi.updateTenantPackages(response.getTenantId(), ADVANCED);
+        setupApi.updateTenantPackages(response.tenantId(), ADVANCED);
 
         CreateOrderCommand command = CreateOrderCommand.builder()
                 .detail(ExtraMemberOrderDetail.builder()
@@ -1152,19 +1152,19 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId");
 
-        CreateOrderResponse secondOrderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse secondOrderResponse = OrderApi.createOrder(response.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxPaid(secondOrderResponse.getId(), "fakeWxPayTxnId");
 
-        PagedList<QListOrder> withoutSearchOrders = OrderApi.listOrders(response.getJwt(), ListOrdersQuery.builder()
+        PagedList<QListOrder> withoutSearchOrders = OrderApi.listOrders(response.jwt(), ListOrdersQuery.builder()
                 .pageIndex(1)
                 .pageSize(20)
                 .build());
         assertEquals(2, withoutSearchOrders.getData().size());
 
-        PagedList<QListOrder> withSearchOrders = OrderApi.listOrders(response.getJwt(), ListOrdersQuery.builder()
+        PagedList<QListOrder> withSearchOrders = OrderApi.listOrders(response.jwt(), ListOrdersQuery.builder()
                 .pageIndex(1)
                 .pageSize(20)
                 .search(orderResponse.getId())
@@ -1173,7 +1173,7 @@ public class OrderControllerApiTest extends BaseApiTest {
         QListOrder listOrder = withSearchOrders.getData().get(0);
         assertEquals(orderResponse.getId(), listOrder.getId());
 
-        PagedList<QListOrder> withWxTxnIdSearchOrders = OrderApi.listOrders(response.getJwt(), ListOrdersQuery.builder()
+        PagedList<QListOrder> withWxTxnIdSearchOrders = OrderApi.listOrders(response.jwt(), ListOrdersQuery.builder()
                 .pageIndex(1)
                 .pageSize(20)
                 .search("fakeWxPayTxnId")
@@ -1201,10 +1201,10 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId");
 
-        QDetailedOrder detailedOrder = OrderApi.fetchDetailedOrder(response.getJwt(), orderResponse.getId());
+        QDetailedOrder detailedOrder = OrderApi.fetchDetailedOrder(response.jwt(), orderResponse.getId());
         Order order = orderRepository.byId(orderResponse.getId());
         assertEquals(order.getPrice().getDiscountedTotalPrice(), detailedOrder.getDiscountedTotalPrice());
         assertEquals(order.getWxTxnId(), detailedOrder.getWxTxnId());
@@ -1226,10 +1226,10 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId");
 
-        TenantApi.updateInvoiceTitle(response.getJwt(), UpdateTenantInvoiceTitleCommand.builder()
+        TenantApi.updateInvoiceTitle(response.jwt(), UpdateTenantInvoiceTitleCommand.builder()
                 .title(InvoiceTitle.builder()
                         .title("成都码如云信息技术有限公司")
                         .unifiedCode("124403987955856482")
@@ -1244,7 +1244,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .type(VAT_NORMAL)
                 .email(rEmail())
                 .build();
-        OrderApi.requestInvoice(response.getJwt(), orderResponse.getId(), requestInvoiceCommand);
+        OrderApi.requestInvoice(response.jwt(), orderResponse.getId(), requestInvoiceCommand);
 
         Order order = orderRepository.byId(orderResponse.getId());
         assertEquals(requestInvoiceCommand.getEmail(), order.getInvoice().getEmail());
@@ -1265,7 +1265,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId");
 
         RequestInvoiceCommand requestInvoiceCommand = RequestInvoiceCommand.builder()
@@ -1273,7 +1273,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .email(rEmail())
                 .build();
 
-        assertError(() -> OrderApi.requestInvoiceRaw(response.getJwt(), orderResponse.getId(), requestInvoiceCommand), NO_INVOICE_TITLE);
+        assertError(() -> OrderApi.requestInvoiceRaw(response.jwt(), orderResponse.getId(), requestInvoiceCommand), NO_INVOICE_TITLE);
     }
 
     @Test
@@ -1289,10 +1289,10 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
         StubOrderPaidNotifyApi.notifyWxPaid(orderResponse.getId(), "fakeWxPayTxnId");
 
-        TenantApi.updateInvoiceTitle(response.getJwt(), UpdateTenantInvoiceTitleCommand.builder()
+        TenantApi.updateInvoiceTitle(response.jwt(), UpdateTenantInvoiceTitleCommand.builder()
                 .title(InvoiceTitle.builder()
                         .title("成都码如云信息技术有限公司")
                         .unifiedCode("124403987955856482")
@@ -1307,8 +1307,8 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .type(VAT_NORMAL)
                 .email(rEmail())
                 .build();
-        OrderApi.requestInvoice(response.getJwt(), orderResponse.getId(), requestInvoiceCommand);
-        assertError(() -> OrderApi.requestInvoiceRaw(response.getJwt(), orderResponse.getId(), requestInvoiceCommand), INVOICE_ALREADY_REQUESTED);
+        OrderApi.requestInvoice(response.jwt(), orderResponse.getId(), requestInvoiceCommand);
+        assertError(() -> OrderApi.requestInvoiceRaw(response.jwt(), orderResponse.getId(), requestInvoiceCommand), INVOICE_ALREADY_REQUESTED);
     }
 
     @Test
@@ -1324,9 +1324,9 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .paymentType(WX_NATIVE)
                 .build();
 
-        CreateOrderResponse orderResponse = OrderApi.createOrder(response.getJwt(), command);
+        CreateOrderResponse orderResponse = OrderApi.createOrder(response.jwt(), command);
 
-        TenantApi.updateInvoiceTitle(response.getJwt(), UpdateTenantInvoiceTitleCommand.builder()
+        TenantApi.updateInvoiceTitle(response.jwt(), UpdateTenantInvoiceTitleCommand.builder()
                 .title(InvoiceTitle.builder()
                         .title("成都码如云信息技术有限公司")
                         .unifiedCode("124403987955856482")
@@ -1341,7 +1341,7 @@ public class OrderControllerApiTest extends BaseApiTest {
                 .type(VAT_NORMAL)
                 .email(rEmail())
                 .build();
-        assertError(() -> OrderApi.requestInvoiceRaw(response.getJwt(), orderResponse.getId(), requestInvoiceCommand), ORDER_NOT_PAID);
+        assertError(() -> OrderApi.requestInvoiceRaw(response.jwt(), orderResponse.getId(), requestInvoiceCommand), ORDER_NOT_PAID);
     }
 
 }

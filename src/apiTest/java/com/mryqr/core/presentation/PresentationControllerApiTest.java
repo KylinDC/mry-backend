@@ -46,15 +46,15 @@ public class PresentationControllerApiTest extends BaseApiTest {
     @Test
     public void public_user_should_be_able_to_get_non_chart_presentation_if_control_if_public() {
         PreparedQrResponse qrResponse = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(qrResponse.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(qrResponse.tenantId(), PROFESSIONAL);
 
         FSingleLineTextControl singleLineTextControl = defaultSingleLineTextControl();
-        PSubmissionReferenceControl referenceControl = defaultSubmissionReferenceControlBuilder().pageId(qrResponse.getHomePageId()).build();
-        AppApi.updateAppPermissionAndControls(qrResponse.getJwt(), qrResponse.getAppId(), PUBLIC, singleLineTextControl, referenceControl);
+        PSubmissionReferenceControl referenceControl = defaultSubmissionReferenceControlBuilder().pageId(qrResponse.homePageId()).build();
+        AppApi.updateAppPermissionAndControls(qrResponse.jwt(), qrResponse.appId(), PUBLIC, singleLineTextControl, referenceControl);
 
         SingleLineTextAnswer singleLineTextAnswer = rAnswer(singleLineTextControl);
-        SubmissionApi.newSubmission(qrResponse.getJwt(), qrResponse.getQrId(), qrResponse.getHomePageId(), singleLineTextAnswer);
-        QSubmissionReferencePresentation presentation = (QSubmissionReferencePresentation) PresentationApi.fetchPresentation(null, qrResponse.getQrId(), qrResponse.getHomePageId(), referenceControl.getId());
+        SubmissionApi.newSubmission(qrResponse.jwt(), qrResponse.qrId(), qrResponse.homePageId(), singleLineTextAnswer);
+        QSubmissionReferencePresentation presentation = (QSubmissionReferencePresentation) PresentationApi.fetchPresentation(null, qrResponse.qrId(), qrResponse.homePageId(), referenceControl.getId());
 
         TextDisplayValue value = (TextDisplayValue) presentation.getValues().get(singleLineTextControl.getId());
         assertEquals(singleLineTextAnswer.getContent(), value.getText());
@@ -63,7 +63,7 @@ public class PresentationControllerApiTest extends BaseApiTest {
     @Test
     public void public_user_should_not_be_able_to_get_chart_presentation_if_control_is_public() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(3).build();
         PTimeSegmentControl control = defaultTimeSegmentControlBuilder()
@@ -72,21 +72,21 @@ public class PresentationControllerApiTest extends BaseApiTest {
                         .name("未命名统计项")
                         .segmentType(CONTROL_VALUE_SUM)
                         .basedType(CREATED_AT)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .targetControlId(numberInputControl.getId())
                         .build()))
                 .interval(PER_MONTH)
                 .max(5)
                 .build();
-        AppApi.updateAppPermissionAndControls(response.getJwt(), response.getAppId(), PUBLIC, numberInputControl, control);
+        AppApi.updateAppPermissionAndControls(response.jwt(), response.appId(), PUBLIC, numberInputControl, control);
 
-        assertError(() -> PresentationApi.fetchPresentationRaw(null, response.getQrId(), response.getHomePageId(), control.getId()), AUTHENTICATION_FAILED);
+        assertError(() -> PresentationApi.fetchPresentationRaw(null, response.qrId(), response.homePageId(), control.getId()), AUTHENTICATION_FAILED);
     }
 
     @Test
     public void should_return_401_if_not_logged_in_but_login_required() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(3).build();
         PTimeSegmentControl control = defaultTimeSegmentControlBuilder()
@@ -95,21 +95,21 @@ public class PresentationControllerApiTest extends BaseApiTest {
                         .name("未命名统计项")
                         .segmentType(CONTROL_VALUE_SUM)
                         .basedType(CREATED_AT)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .targetControlId(numberInputControl.getId())
                         .build()))
                 .interval(PER_MONTH)
                 .max(5)
                 .build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, control);
-        assertError(() -> PresentationApi.fetchPresentationRaw(null, response.getQrId(), response.getHomePageId(), control.getId()), AUTHENTICATION_FAILED);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, control);
+        assertError(() -> PresentationApi.fetchPresentationRaw(null, response.qrId(), response.homePageId(), control.getId()), AUTHENTICATION_FAILED);
     }
 
     @Test
     public void should_return_403_if_permission_not_enough() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(3).build();
         PTimeSegmentControl control = defaultTimeSegmentControlBuilder()
@@ -118,23 +118,23 @@ public class PresentationControllerApiTest extends BaseApiTest {
                         .name("未命名统计项")
                         .segmentType(CONTROL_VALUE_SUM)
                         .basedType(CREATED_AT)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .targetControlId(numberInputControl.getId())
                         .build()))
                 .interval(PER_MONTH)
                 .max(5)
                 .build();
 
-        AppApi.updateAppPermissionAndControls(response.getJwt(), response.getAppId(), AS_GROUP_MEMBER, numberInputControl, control);
-        CreateMemberResponse noPermissionMember = MemberApi.createMemberAndLogin(response.getJwt());
-        assertError(() -> PresentationApi.fetchPresentationRaw(noPermissionMember.getJwt(), response.getQrId(), response.getHomePageId(), control.getId()), ACCESS_DENIED);
+        AppApi.updateAppPermissionAndControls(response.jwt(), response.appId(), AS_GROUP_MEMBER, numberInputControl, control);
+        CreateMemberResponse noPermissionMember = MemberApi.createMemberAndLogin(response.jwt());
+        assertError(() -> PresentationApi.fetchPresentationRaw(noPermissionMember.jwt(), response.qrId(), response.homePageId(), control.getId()), ACCESS_DENIED);
     }
 
 
     @Test
     public void should_return_error_if_package_too_low_for_statistics_controls() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(3).build();
         PTimeSegmentControl control = defaultTimeSegmentControlBuilder()
@@ -143,30 +143,30 @@ public class PresentationControllerApiTest extends BaseApiTest {
                         .name("未命名统计项")
                         .segmentType(CONTROL_VALUE_SUM)
                         .basedType(CREATED_AT)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .targetControlId(numberInputControl.getId())
                         .build()))
                 .interval(PER_MONTH)
                 .max(5)
                 .build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, control);
-        setupApi.updateTenantPackages(response.getTenantId(), FREE);
-        assertError(() -> PresentationApi.fetchPresentationRaw(response.getJwt(), response.getQrId(), response.getHomePageId(), control.getId()), CONTROL_TYPE_NOT_ALLOWED);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, control);
+        setupApi.updateTenantPackages(response.tenantId(), FREE);
+        assertError(() -> PresentationApi.fetchPresentationRaw(response.jwt(), response.qrId(), response.homePageId(), control.getId()), CONTROL_TYPE_NOT_ALLOWED);
 
-        setupApi.updateTenantPackages(response.getTenantId(), BASIC);
-        assertError(() -> PresentationApi.fetchPresentationRaw(response.getJwt(), response.getQrId(), response.getHomePageId(), control.getId()), CONTROL_TYPE_NOT_ALLOWED);
+        setupApi.updateTenantPackages(response.tenantId(), BASIC);
+        assertError(() -> PresentationApi.fetchPresentationRaw(response.jwt(), response.qrId(), response.homePageId(), control.getId()), CONTROL_TYPE_NOT_ALLOWED);
 
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         setupApi.updateTenantPackages(tenant, PROFESSIONAL, Instant.now().minus(10, DAYS));
-        assertError(() -> PresentationApi.fetchPresentationRaw(response.getJwt(), response.getQrId(), response.getHomePageId(), control.getId()), CONTROL_TYPE_NOT_ALLOWED);
+        assertError(() -> PresentationApi.fetchPresentationRaw(response.jwt(), response.qrId(), response.homePageId(), control.getId()), CONTROL_TYPE_NOT_ALLOWED);
     }
 
 
     @Test
     public void should_return_error_if_control_not_complete() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FNumberInputControl numberInputControl = defaultNumberInputControlBuilder().precision(3).build();
         PTimeSegmentControl control = defaultTimeSegmentControlBuilder()
@@ -175,14 +175,14 @@ public class PresentationControllerApiTest extends BaseApiTest {
                         .name("未命名统计项")
                         .segmentType(CONTROL_VALUE_SUM)
                         .basedType(CREATED_AT)
-                        .pageId(response.getHomePageId())
+                        .pageId(response.homePageId())
                         .targetControlId(null)
                         .build()))
                 .interval(PER_MONTH)
                 .max(5)
                 .build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), numberInputControl, control);
-        assertError(() -> PresentationApi.fetchPresentationRaw(response.getJwt(), response.getQrId(), response.getHomePageId(), control.getId()), CONTROL_NOT_COMPLETE);
+        AppApi.updateAppControls(response.jwt(), response.appId(), numberInputControl, control);
+        assertError(() -> PresentationApi.fetchPresentationRaw(response.jwt(), response.qrId(), response.homePageId(), control.getId()), CONTROL_NOT_COMPLETE);
     }
 }

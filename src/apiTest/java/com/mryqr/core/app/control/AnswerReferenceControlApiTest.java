@@ -37,13 +37,13 @@ public class AnswerReferenceControlApiTest extends BaseApiTest {
     @Test
     public void should_create_control_normally() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        PAnswerReferenceControl control = defaultAnswerReferenceControlBuilder().pageId(response.getHomePageId()).controlId(checkboxControl.getId()).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), checkboxControl, control);
+        PAnswerReferenceControl control = defaultAnswerReferenceControlBuilder().pageId(response.homePageId()).controlId(checkboxControl.getId()).build();
+        AppApi.updateAppControls(response.jwt(), response.appId(), checkboxControl, control);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         Control updatedControl = app.controlByIdOptional(control.getId()).get();
         assertEquals(control, updatedControl);
         assertTrue(updatedControl.isComplete());
@@ -52,14 +52,14 @@ public class AnswerReferenceControlApiTest extends BaseApiTest {
     @Test
     public void should_not_complete_with_no_page() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), checkboxControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), checkboxControl);
         PAnswerReferenceControl control = defaultAnswerReferenceControlBuilder().controlId(checkboxControl.getId()).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         Control updatedControl = app.controlByIdOptional(control.getId()).get();
         assertFalse(updatedControl.isComplete());
     }
@@ -67,14 +67,14 @@ public class AnswerReferenceControlApiTest extends BaseApiTest {
     @Test
     public void should_not_complete_with_no_control() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), checkboxControl);
-        PAnswerReferenceControl control = defaultAnswerReferenceControlBuilder().pageId(response.getHomePageId()).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), checkboxControl);
+        PAnswerReferenceControl control = defaultAnswerReferenceControlBuilder().pageId(response.homePageId()).build();
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         Control updatedControl = app.controlByIdOptional(control.getId()).get();
         assertFalse(updatedControl.isComplete());
     }
@@ -82,62 +82,62 @@ public class AnswerReferenceControlApiTest extends BaseApiTest {
     @Test
     public void should_fail_create_control_if_referenced_page_not_exist() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), checkboxControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), checkboxControl);
         PAnswerReferenceControl control = defaultAnswerReferenceControlBuilder().pageId(Page.newPageId()).controlId(checkboxControl.getId()).build();
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         AppSetting setting = app.getSetting();
         setting.homePage().getControls().add(control);
-        assertError(() -> AppApi.updateAppSettingRaw(response.getJwt(), response.getAppId(), app.getVersion(), setting), VALIDATION_PAGE_NOT_EXIST);
+        assertError(() -> AppApi.updateAppSettingRaw(response.jwt(), response.appId(), app.getVersion(), setting), VALIDATION_PAGE_NOT_EXIST);
     }
 
     @Test
     public void should_fail_create_control_if_referenced_control_not_exist() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         FCheckboxControl checkboxControl = defaultCheckboxControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), checkboxControl);
-        PAnswerReferenceControl control = defaultAnswerReferenceControlBuilder().pageId(response.getHomePageId()).controlId(Control.newControlId()).build();
-        App app = appRepository.byId(response.getAppId());
+        AppApi.updateAppControls(response.jwt(), response.appId(), checkboxControl);
+        PAnswerReferenceControl control = defaultAnswerReferenceControlBuilder().pageId(response.homePageId()).controlId(Control.newControlId()).build();
+        App app = appRepository.byId(response.appId());
         AppSetting setting = app.getSetting();
         setting.homePage().getControls().add(control);
 
-        assertError(() -> AppApi.updateAppSettingRaw(response.getJwt(), response.getAppId(), app.getVersion(), setting), VALIDATION_CONTROL_NOT_EXIST);
+        assertError(() -> AppApi.updateAppSettingRaw(response.jwt(), response.appId(), app.getVersion(), setting), VALIDATION_CONTROL_NOT_EXIST);
     }
 
     @Test
     public void should_fail_create_control_if_referenced_control_not_referencable() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         PSectionTitleViewControl sectionTitleControl = defaultSectionTitleControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), sectionTitleControl);
-        PAnswerReferenceControl control = defaultAnswerReferenceControlBuilder().pageId(response.getHomePageId()).controlId(sectionTitleControl.getId()).build();
+        AppApi.updateAppControls(response.jwt(), response.appId(), sectionTitleControl);
+        PAnswerReferenceControl control = defaultAnswerReferenceControlBuilder().pageId(response.homePageId()).controlId(sectionTitleControl.getId()).build();
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         AppSetting setting = app.getSetting();
         setting.homePage().getControls().add(control);
-        assertError(() -> AppApi.updateAppSettingRaw(response.getJwt(), response.getAppId(), app.getVersion(), setting), CONTROL_NOT_SUPPORT_REFERENCE);
+        assertError(() -> AppApi.updateAppSettingRaw(response.jwt(), response.appId(), app.getVersion(), setting), CONTROL_NOT_SUPPORT_REFERENCE);
     }
 
     @Test
     public void should_fetch_answer_reference_presentation_value() {
         PreparedQrResponse qrResponse = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(qrResponse.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(qrResponse.tenantId(), PROFESSIONAL);
 
         FSingleLineTextControl singleLineTextControl = defaultSingleLineTextControl();
-        PAnswerReferenceControl referenceControl = defaultAnswerReferenceControlBuilder().pageId(qrResponse.getHomePageId()).controlId(singleLineTextControl.getId()).build();
-        AppApi.updateAppControls(qrResponse.getJwt(), qrResponse.getAppId(), singleLineTextControl, referenceControl);
+        PAnswerReferenceControl referenceControl = defaultAnswerReferenceControlBuilder().pageId(qrResponse.homePageId()).controlId(singleLineTextControl.getId()).build();
+        AppApi.updateAppControls(qrResponse.jwt(), qrResponse.appId(), singleLineTextControl, referenceControl);
         //first submission, will not be targeted
-        SubmissionApi.newSubmission(qrResponse.getJwt(), qrResponse.getQrId(), qrResponse.getHomePageId(), rAnswer(singleLineTextControl));
+        SubmissionApi.newSubmission(qrResponse.jwt(), qrResponse.qrId(), qrResponse.homePageId(), rAnswer(singleLineTextControl));
 
         SingleLineTextAnswer singleLineTextAnswer = rAnswer(singleLineTextControl);
-        SubmissionApi.newSubmission(qrResponse.getJwt(), qrResponse.getQrId(), qrResponse.getHomePageId(), singleLineTextAnswer);
-        QAnswerReferencePresentation presentation = (QAnswerReferencePresentation) PresentationApi.fetchPresentation(qrResponse.getJwt(), qrResponse.getQrId(), qrResponse.getHomePageId(), referenceControl.getId());
+        SubmissionApi.newSubmission(qrResponse.jwt(), qrResponse.qrId(), qrResponse.homePageId(), singleLineTextAnswer);
+        QAnswerReferencePresentation presentation = (QAnswerReferencePresentation) PresentationApi.fetchPresentation(qrResponse.jwt(), qrResponse.qrId(), qrResponse.homePageId(), referenceControl.getId());
 
         TextDisplayValue value = (TextDisplayValue) presentation.getValue();
         assertEquals(singleLineTextAnswer.getContent(), value.getText());

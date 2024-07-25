@@ -140,7 +140,8 @@ public abstract class BaseApiTest {
                         .objectMapperConfig(new ObjectMapperConfig().jackson2ObjectMapperFactory(
                                 (type, s) -> new MryObjectMapper()))
                         .encoderConfig(new EncoderConfig().appendDefaultContentCharsetToContentTypeIfUndefined(false))
-                        .logConfig(LogConfig.logConfig().enableLoggingOfRequestAndResponseIfValidationFails()));
+                        .logConfig(LogConfig.logConfig().enableLoggingOfRequestAndResponseIfValidationFails())
+                );
     }
 
     public static RequestSpecification given(String jwt) {

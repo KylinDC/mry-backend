@@ -152,7 +152,7 @@ class PlateTemplateControllerApiTest extends BaseApiTest {
                 .containsAll(List.of(plateTemplateId, anotherPlateTemplateId)));
 
         CreateMemberResponse aMember = MemberApi.createMemberAndLogin(jwt);
-        assertTrue(PlateTemplateApi.listPlateTemplates(aMember.getJwt())
+        assertTrue(PlateTemplateApi.listPlateTemplates(aMember.jwt())
                 .stream().map(QListPlateTemplate::getId).toList()
                 .containsAll(List.of(plateTemplateId, anotherPlateTemplateId)));
     }
@@ -178,13 +178,13 @@ class PlateTemplateControllerApiTest extends BaseApiTest {
     @Test
     public void non_mry_self_tenant_should_not_create_plate_template() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         CreatePlateTemplateCommand command = CreatePlateTemplateCommand.builder()
                 .appId(app.getId())
                 .plateSetting(app.getSetting().getPlateSetting())
                 .build();
 
-        assertError(() -> PlateTemplateApi.createPlateTemplateRaw(response.getJwt(), command), ACCESS_DENIED);
+        assertError(() -> PlateTemplateApi.createPlateTemplateRaw(response.jwt(), command), ACCESS_DENIED);
     }
 
     @Test

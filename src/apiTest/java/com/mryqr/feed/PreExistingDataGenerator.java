@@ -137,25 +137,25 @@ public class PreExistingDataGenerator extends BaseApiTest {
     private void createTenant(Plan plan) {
         LoginResponse tenantAdmin = setupApi.registerWithLogin(rRawMemberName(), rMobileOrEmail(), rPassword());
         if (plan.getType() != FREE) {
-            setupApi.updateTenantPackages(tenantAdmin.getTenantId(), plan.getType());
+            setupApi.updateTenantPackages(tenantAdmin.tenantId(), plan.getType());
         }
 
-        List<String> allMemberJwts = Stream.concat(of(tenantAdmin.getJwt()), range(0, rInt(1, plan.getMaxMemberCount() - 1)).mapToObj(value -> createMember(tenantAdmin.getJwt())).filter(Objects::nonNull)).collect(toList());
+        List<String> allMemberJwts = Stream.concat(of(tenantAdmin.jwt()), range(0, rInt(1, plan.getMaxMemberCount() - 1)).mapToObj(value -> createMember(tenantAdmin.jwt())).filter(Objects::nonNull)).collect(toList());
         int totalAppCount = appCountOf(plan);
 
         range(0, totalAppCount).forEach(appIndex -> {
-            createApp(tenantAdmin.getJwt(), plan).ifPresent(response -> {
+            createApp(tenantAdmin.jwt(), plan).ifPresent(response -> {
                 App app = response.getLeft();
 
                 List<String> allGroupIds = range(0, nextInt(0, plan.getMaxGroupCountPerApp() - 1))
-                        .mapToObj(it -> createGroup(tenantAdmin.getJwt(), app.getId()))
+                        .mapToObj(it -> createGroup(tenantAdmin.jwt(), app.getId()))
                         .filter(Objects::nonNull).collect(toList());
                 allGroupIds.add(response.getRight());
 
                 try {
                     qrPool.submit(
                             () -> range(0, appQrCountOf(plan, totalAppCount)).parallel().forEach(qrIndex -> {
-                                createQr(tenantAdmin.getJwt(), allGroupIds.get(nextInt(0, allGroupIds.size()))).ifPresent(qrId -> {
+                                createQr(tenantAdmin.jwt(), allGroupIds.get(nextInt(0, allGroupIds.size()))).ifPresent(qrId -> {
                                     app.allPages().stream().filter(page -> page.isFillable() && page.submitType() == ONCE_PER_INSTANCE)
                                             .forEach(page -> createSubmission(allMemberJwts.get(nextInt(0, allMemberJwts.size())), qrId, page));
 
@@ -174,7 +174,7 @@ public class PreExistingDataGenerator extends BaseApiTest {
     private String createMember(String jwt) {
         try {
             CreateMemberResponse member = MemberApi.createMemberAndLogin(jwt, rRawMemberName(), rMobile(), rPassword());
-            return member.getJwt();
+            return member.jwt();
         } catch (Throwable t) {
             logger.warn("Failed to create member: {}.", t.getMessage());
             return null;

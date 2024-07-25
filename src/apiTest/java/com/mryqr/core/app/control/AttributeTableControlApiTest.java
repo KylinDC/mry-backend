@@ -85,14 +85,14 @@ public class AttributeTableControlApiTest extends BaseApiTest {
     @Test
     public void should_create_control_normally() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         Attribute fixValueAttribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).range(NO_LIMIT).type(FIXED).fixedValue("whatever").build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), fixValueAttribute);
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), fixValueAttribute);
         PAttributeTableControl control = defaultAttributeTableControlBuilder().attributeIds(newArrayList(fixValueAttribute.getId())).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         Control updatedControl = app.controlByIdOptional(control.getId()).get();
         assertEquals(control, updatedControl);
         assertTrue(updatedControl.isComplete());
@@ -101,12 +101,12 @@ public class AttributeTableControlApiTest extends BaseApiTest {
     @Test
     public void should_not_complete_if_no_attribute() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         PAttributeTableControl control = defaultAttributeTableControlBuilder().attributeIds(newArrayList()).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         Control updatedControl = app.controlByIdOptional(control.getId()).get();
         assertFalse(updatedControl.isComplete());
     }
@@ -114,29 +114,29 @@ public class AttributeTableControlApiTest extends BaseApiTest {
     @Test
     public void should_fail_create_if_attribute_not_exit() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         PAttributeTableControl control = defaultAttributeTableControlBuilder().attributeIds(newArrayList(newAttributeId())).build();
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         AppSetting setting = app.getSetting();
         setting.homePage().getControls().add(control);
 
-        assertError(() -> AppApi.updateAppSettingRaw(response.getJwt(), response.getAppId(), app.getVersion(), setting), VALIDATION_ATTRIBUTE_NOT_EXIST);
+        assertError(() -> AppApi.updateAppSettingRaw(response.jwt(), response.appId(), app.getVersion(), setting), VALIDATION_ATTRIBUTE_NOT_EXIST);
     }
 
     @Test
     public void should_fetch_attribute_table_presentation_value() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         Attribute attribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(INSTANCE_NAME).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute);
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute);
         PAttributeTableControl control = defaultAttributeTableControlBuilder().attributeIds(newArrayList(attribute.getId())).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
         String qrName = rQrName();
-        CreateQrResponse qrResponse = QrApi.createQr(response.getJwt(), qrName, response.getDefaultGroupId());
+        CreateQrResponse qrResponse = QrApi.createQr(response.jwt(), qrName, response.defaultGroupId());
 
-        QAttributeTablePresentation valuesPresentation = (QAttributeTablePresentation) PresentationApi.fetchPresentation(response.getJwt(), qrResponse.getQrId(), response.getHomePageId(), control.getId());
+        QAttributeTablePresentation valuesPresentation = (QAttributeTablePresentation) PresentationApi.fetchPresentation(response.jwt(), qrResponse.getQrId(), response.homePageId(), control.getId());
         TextDisplayValue displayValue = (TextDisplayValue) valuesPresentation.getValues().get(attribute.getId());
         assertEquals(qrName, displayValue.getText());
     }
@@ -144,25 +144,25 @@ public class AttributeTableControlApiTest extends BaseApiTest {
     @Test
     public void should_fetch_page_referenced_attribute_presentation_value() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         String memberName = rMemberName();
         String email = rEmail();
         String mobile = rMobile();
-        MemberApi.updateMember(response.getJwt(), response.getMemberId(), UpdateMemberInfoCommand.builder()
+        MemberApi.updateMember(response.jwt(), response.memberId(), UpdateMemberInfoCommand.builder()
                 .name(memberName)
                 .email(email)
                 .mobile(mobile)
                 .departmentIds(List.of())
                 .build());
 
-        Attribute pageSubmitCountAttribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(PAGE_SUBMIT_COUNT).pageId(response.getHomePageId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute pageSubmitterAttribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(PAGE_LAST_SUBMITTER).pageId(response.getHomePageId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute pageSubmittedTimeAttribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(PAGE_LAST_SUBMITTED_TIME).pageId(response.getHomePageId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute pageSubmittedDateAttribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(PAGE_LAST_SUBMITTED_DATE).pageId(response.getHomePageId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute pageSubmittedMemberAndEmailAttribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(PAGE_LAST_SUBMITTER_AND_EMAIL).pageId(response.getHomePageId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        Attribute pageSubmittedMemberAndMobileAttribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(PAGE_LAST_SUBMITTER_AND_MOBILE).pageId(response.getHomePageId()).range(AttributeStatisticRange.NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(),
+        Attribute pageSubmitCountAttribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(PAGE_SUBMIT_COUNT).pageId(response.homePageId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute pageSubmitterAttribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(PAGE_LAST_SUBMITTER).pageId(response.homePageId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute pageSubmittedTimeAttribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(PAGE_LAST_SUBMITTED_TIME).pageId(response.homePageId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute pageSubmittedDateAttribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(PAGE_LAST_SUBMITTED_DATE).pageId(response.homePageId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute pageSubmittedMemberAndEmailAttribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(PAGE_LAST_SUBMITTER_AND_EMAIL).pageId(response.homePageId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        Attribute pageSubmittedMemberAndMobileAttribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(PAGE_LAST_SUBMITTER_AND_MOBILE).pageId(response.homePageId()).range(AttributeStatisticRange.NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(),
                 pageSubmitCountAttribute,
                 pageSubmitterAttribute,
                 pageSubmittedTimeAttribute,
@@ -181,15 +181,15 @@ public class AttributeTableControlApiTest extends BaseApiTest {
                 ))
                 .build();
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         AppSetting setting = app.getSetting();
         setting.homePage().getControls().add(attributeTableControl);
-        AppApi.updateAppSetting(response.getJwt(), response.getAppId(), setting);
+        AppApi.updateAppSetting(response.jwt(), response.appId(), setting);
 
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        QAttributeTablePresentation presentation = (QAttributeTablePresentation) PresentationApi.fetchPresentation(response.getJwt(), response.getQrId(), response.getHomePageId(), attributeTableControl.getId());
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        QAttributeTablePresentation presentation = (QAttributeTablePresentation) PresentationApi.fetchPresentation(response.jwt(), response.qrId(), response.homePageId(), attributeTableControl.getId());
         Map<String, DisplayValue> valueMap = presentation.getValues();
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         Submission submission = submissionRepository.byId(submissionId);
 
         NumberDisplayValue submitAccountValue = (NumberDisplayValue) valueMap.get(pageSubmitCountAttribute.getId());
@@ -216,10 +216,10 @@ public class AttributeTableControlApiTest extends BaseApiTest {
     @Test
     public void should_fetch_instance_referenced_attribute_presentation_value() {
         PreparedQrResponse response = setupApi.registerWithQr();
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
-        AppApi.enableAppPosition(response.getJwt(), response.getAppId());
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
+        AppApi.enableAppPosition(response.jwt(), response.appId());
 
-        QrApi.updateQrBaseSetting(response.getJwt(), response.getQrId(), UpdateQrBaseSettingCommand.builder()
+        QrApi.updateQrBaseSetting(response.jwt(), response.qrId(), UpdateQrBaseSettingCommand.builder()
                 .customId(rCustomId())
                 .name(rQrName())
                 .geolocation(rGeolocation())
@@ -228,7 +228,7 @@ public class AttributeTableControlApiTest extends BaseApiTest {
         String memberName = rMemberName();
         String email = rEmail();
         String mobile = rMobile();
-        MemberApi.updateMember(response.getJwt(), response.getMemberId(), UpdateMemberInfoCommand.builder()
+        MemberApi.updateMember(response.jwt(), response.memberId(), UpdateMemberInfoCommand.builder()
                 .name(memberName)
                 .email(email)
                 .mobile(mobile)
@@ -238,8 +238,8 @@ public class AttributeTableControlApiTest extends BaseApiTest {
         String anotherMemberName = rMemberName();
         String anotherMemberMobile = rMobile();
         String anotherMemberEmail = rEmail();
-        String anotherMemberId = MemberApi.createMember(response.getJwt(), anotherMemberName, anotherMemberMobile, anotherMemberEmail, rPassword());
-        GroupApi.addGroupManagers(response.getJwt(), response.getDefaultGroupId(), response.getMemberId(), anotherMemberId);
+        String anotherMemberId = MemberApi.createMember(response.jwt(), anotherMemberName, anotherMemberMobile, anotherMemberEmail, rPassword());
+        GroupApi.addGroupManagers(response.jwt(), response.defaultGroupId(), response.memberId(), anotherMemberId);
 
         Attribute instanceNameAttribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(INSTANCE_NAME).range(AttributeStatisticRange.NO_LIMIT).build();
         Attribute instancePlateIdAttribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(INSTANCE_PLATE_ID).range(AttributeStatisticRange.NO_LIMIT).build();
@@ -256,7 +256,7 @@ public class AttributeTableControlApiTest extends BaseApiTest {
         Attribute instanceGroupManagersEmailAttribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(INSTANCE_GROUP_MANAGERS_AND_EMAIL).range(AttributeStatisticRange.NO_LIMIT).build();
         Attribute instanceActiveStatusAttribute = Attribute.builder().id(newAttributeId()).name(rAttributeName()).type(INSTANCE_ACTIVE_STATUS).range(AttributeStatisticRange.NO_LIMIT).build();
 
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(),
+        AppApi.updateAppAttributes(response.jwt(), response.appId(),
                 instanceNameAttribute,
                 instancePlateIdAttribute,
                 instanceCustomIdAttribute,
@@ -292,16 +292,16 @@ public class AttributeTableControlApiTest extends BaseApiTest {
                 ))
                 .build();
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         AppSetting setting = app.getSetting();
         setting.homePage().getControls().add(attributeTableControl);
-        AppApi.updateAppSetting(response.getJwt(), response.getAppId(), setting);
+        AppApi.updateAppSetting(response.jwt(), response.appId(), setting);
 
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId());
-        QrApi.fetchSubmissionQr(response.getJwt(), response.getPlateId());
-        QAttributeTablePresentation presentation = (QAttributeTablePresentation) PresentationApi.fetchPresentation(response.getJwt(), response.getQrId(), response.getHomePageId(), attributeTableControl.getId());
-        QR qr = qrRepository.byId(response.getQrId());
-        Group group = groupRepository.byId(response.getDefaultGroupId());
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId());
+        QrApi.fetchSubmissionQr(response.jwt(), response.plateId());
+        QAttributeTablePresentation presentation = (QAttributeTablePresentation) PresentationApi.fetchPresentation(response.jwt(), response.qrId(), response.homePageId(), attributeTableControl.getId());
+        QR qr = qrRepository.byId(response.qrId());
+        Group group = groupRepository.byId(response.defaultGroupId());
 
         Map<String, DisplayValue> valueMap = presentation.getValues();
         TextDisplayValue instanceNameValue = (TextDisplayValue) valueMap.get(instanceNameAttribute.getId());
@@ -338,11 +338,11 @@ public class AttributeTableControlApiTest extends BaseApiTest {
         assertEquals(memberName + ", " + anotherMemberName, instanceGroupManagersValue.getText());
 
         EmailedMembersDisplayValue instanceGroupManagersEmailValue = (EmailedMembersDisplayValue) valueMap.get(instanceGroupManagersEmailAttribute.getId());
-        assertTrue(instanceGroupManagersEmailValue.getMembers().contains(EmailedMember.builder().id(response.getMemberId()).name(memberName).email(email).build()));
+        assertTrue(instanceGroupManagersEmailValue.getMembers().contains(EmailedMember.builder().id(response.memberId()).name(memberName).email(email).build()));
         assertTrue(instanceGroupManagersEmailValue.getMembers().contains(EmailedMember.builder().id(anotherMemberId).name(anotherMemberName).email(anotherMemberEmail).build()));
 
         MobiledMembersDisplayValue instanceGroupManagersMobileValue = (MobiledMembersDisplayValue) valueMap.get(instanceGroupManagersMobileAttribute.getId());
-        assertTrue(instanceGroupManagersMobileValue.getMembers().contains(MobiledMember.builder().id(response.getMemberId()).name(memberName).mobile(mobile).build()));
+        assertTrue(instanceGroupManagersMobileValue.getMembers().contains(MobiledMember.builder().id(response.memberId()).name(memberName).mobile(mobile).build()));
         assertTrue(instanceGroupManagersMobileValue.getMembers().contains(MobiledMember.builder().id(anotherMemberId).name(anotherMemberName).mobile(anotherMemberMobile).build()));
 
         BooleanDisplayValue instanceActiveStatusValue = (BooleanDisplayValue) valueMap.get(instanceActiveStatusAttribute.getId());

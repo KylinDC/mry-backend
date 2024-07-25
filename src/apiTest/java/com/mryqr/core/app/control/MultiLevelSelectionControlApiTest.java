@@ -56,9 +56,9 @@ public class MultiLevelSelectionControlApiTest extends BaseApiTest {
                 .titleText("省份/城市/区县")
                 .optionText("四川省/成都市/双流区")
                 .build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         FMultiLevelSelectionControl updatedControl = (FMultiLevelSelectionControl) app.controlByIdOptional(control.getId()).get();
         assertEquals(control, updatedControl);
         assertEquals(3, updatedControl.getTotalLevel());
@@ -76,9 +76,9 @@ public class MultiLevelSelectionControlApiTest extends BaseApiTest {
                 .titleText("省份/城市/区县")
                 .optionText("四川省/成都市/双流区\n四川省/成都市/双流区\n四川省/成都市\n四川省\n四川省/绵阳市\n四川省/绵阳市")
                 .build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         FMultiLevelSelectionControl updatedControl = (FMultiLevelSelectionControl) app.controlByIdOptional(control.getId()).get();
         assertEquals(control, updatedControl);
         assertEquals(3, updatedControl.getTotalLevel());
@@ -100,9 +100,9 @@ public class MultiLevelSelectionControlApiTest extends BaseApiTest {
                 .titleText("省份/城市/区县")
                 .optionText("/四川省/成都市 /双流区\n四川省 /成都市/双流区/\n四川省/成都市/\n四川省/ 绵阳市/\n/陕西省\n陕西省/\n//浙江省\n///\n/ /\n/")
                 .build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         FMultiLevelSelectionControl updatedControl = (FMultiLevelSelectionControl) app.controlByIdOptional(control.getId()).get();
         assertEquals(control, updatedControl);
         assertEquals(3, updatedControl.getTotalLevel());
@@ -127,9 +127,9 @@ public class MultiLevelSelectionControlApiTest extends BaseApiTest {
                 .titleText("省份/城市/区县")
                 .optionText("四川省/成都市/双流区:10\n四川省/绵阳市/:20\n陕西省/ :30")
                 .build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         FMultiLevelSelectionControl updatedControl = (FMultiLevelSelectionControl) app.controlByIdOptional(control.getId()).get();
         assertEquals(control, updatedControl);
         assertEquals(control, updatedControl);
@@ -155,9 +155,9 @@ public class MultiLevelSelectionControlApiTest extends BaseApiTest {
                 .titleText("省份/城市")
                 .optionText("四川省/成都市\n广东省/广州市")
                 .build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         FMultiLevelSelectionControl updatedControl = (FMultiLevelSelectionControl) app.controlByIdOptional(control.getId()).get();
         assertEquals(control, updatedControl);
         assertEquals(2, updatedControl.getTotalLevel());
@@ -179,9 +179,9 @@ public class MultiLevelSelectionControlApiTest extends BaseApiTest {
                 .titleText("省份")
                 .optionText("四川省\n广东省")
                 .build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         FMultiLevelSelectionControl updatedControl = (FMultiLevelSelectionControl) app.controlByIdOptional(control.getId()).get();
         assertEquals(control, updatedControl);
         assertEquals(1, updatedControl.getTotalLevel());
@@ -197,14 +197,14 @@ public class MultiLevelSelectionControlApiTest extends BaseApiTest {
     public void should_answer_normally() {
         PreparedQrResponse response = setupApi.registerWithQr();
         FMultiLevelSelectionControl control = defaultMultiLevelSelectionControl();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
-        App app = appRepository.byId(response.getAppId());
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
+        App app = appRepository.byId(response.appId());
 
         MultiLevelSelectionAnswer answer = rAnswer(control);
         MultiLevelSelection selection = answer.getSelection();
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), answer);
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), answer);
 
-        IndexedField indexedField = app.indexedFieldForControlOptional(response.getHomePageId(), control.getId()).get();
+        IndexedField indexedField = app.indexedFieldForControlOptional(response.homePageId(), control.getId()).get();
         Submission submission = submissionRepository.byId(submissionId);
         MultiLevelSelectionAnswer updatedAnswer = (MultiLevelSelectionAnswer) submission.allAnswers().get(control.getId());
         assertEquals(answer, updatedAnswer);
@@ -223,14 +223,14 @@ public class MultiLevelSelectionControlApiTest extends BaseApiTest {
                 .titleText("省份/城市")
                 .optionText("四川省/成都市\n四川省/绵阳市")
                 .build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         MultiLevelSelectionAnswer answer = rAnswerBuilder(control).selection(MultiLevelSelection.builder()
                 .level1("四川省")
                 .level2("成都市")
                 .level3("青羊区")
                 .build()).build();
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), answer);
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), answer);
 
         Submission submission = submissionRepository.byId(submissionId);
         MultiLevelSelectionAnswer loadedAnswer = (MultiLevelSelectionAnswer) submission.allAnswers().get(control.getId());
@@ -262,9 +262,9 @@ public class MultiLevelSelectionControlApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), dependantControl, calculatedControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), dependantControl, calculatedControl);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         FMultiLevelSelectionControl selectionControl = (FMultiLevelSelectionControl) app.controlById(dependantControl.getId());
 
 
@@ -273,7 +273,7 @@ public class MultiLevelSelectionControlApiTest extends BaseApiTest {
                 .level2("成都市")
                 .build()).build();
 
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), answer);
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), answer);
         Submission submission = submissionRepository.byId(submissionId);
         NumberInputAnswer updatedAnswer = (NumberInputAnswer) submission.getAnswers().get(calculatedControl.getId());
         assertEquals(46, updatedAnswer.getNumber());
@@ -288,15 +288,15 @@ public class MultiLevelSelectionControlApiTest extends BaseApiTest {
                 .titleText("省份/城市/区县")
                 .optionText("四川省/成都市/双流区\n四川省/成都市/青羊区")
                 .build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         MultiLevelSelectionAnswer answer = rAnswerBuilder(control).selection(MultiLevelSelection.builder()
                 .level2("成都市")
                 .build()).build();
 
-        NewSubmissionCommand command = newSubmissionCommand(response.getQrId(), response.getHomePageId(), answer);
+        NewSubmissionCommand command = newSubmissionCommand(response.qrId(), response.homePageId(), answer);
 
-        assertError(() -> SubmissionApi.newSubmissionRaw(response.getJwt(), command), MULTI_SELECTION_LEVEL1_NOT_PROVIDED);
+        assertError(() -> SubmissionApi.newSubmissionRaw(response.jwt(), command), MULTI_SELECTION_LEVEL1_NOT_PROVIDED);
     }
 
     @Test
@@ -307,15 +307,15 @@ public class MultiLevelSelectionControlApiTest extends BaseApiTest {
                 .titleText("省份/城市/区县")
                 .optionText("四川省/成都市/双流区\n四川省/成都市/青羊区")
                 .build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         MultiLevelSelectionAnswer answer = rAnswerBuilder(control).selection(MultiLevelSelection.builder()
                 .level1("四川省")
                 .build()).build();
 
-        NewSubmissionCommand command = newSubmissionCommand(response.getQrId(), response.getHomePageId(), answer);
+        NewSubmissionCommand command = newSubmissionCommand(response.qrId(), response.homePageId(), answer);
 
-        assertError(() -> SubmissionApi.newSubmissionRaw(response.getJwt(), command), MULTI_SELECTION_LEVEL2_NOT_PROVIDED);
+        assertError(() -> SubmissionApi.newSubmissionRaw(response.jwt(), command), MULTI_SELECTION_LEVEL2_NOT_PROVIDED);
     }
 
     @Test
@@ -326,16 +326,16 @@ public class MultiLevelSelectionControlApiTest extends BaseApiTest {
                 .titleText("省份/城市/区县")
                 .optionText("四川省/成都市/双流区\n四川省/成都市/青羊区")
                 .build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         MultiLevelSelectionAnswer answer = rAnswerBuilder(control).selection(MultiLevelSelection.builder()
                 .level1("四川省")
                 .level2("成都市")
                 .build()).build();
 
-        NewSubmissionCommand command = newSubmissionCommand(response.getQrId(), response.getHomePageId(), answer);
+        NewSubmissionCommand command = newSubmissionCommand(response.qrId(), response.homePageId(), answer);
 
-        assertError(() -> SubmissionApi.newSubmissionRaw(response.getJwt(), command), MULTI_SELECTION_LEVEL3_NOT_PROVIDED);
+        assertError(() -> SubmissionApi.newSubmissionRaw(response.jwt(), command), MULTI_SELECTION_LEVEL3_NOT_PROVIDED);
     }
 
     @Test
@@ -346,13 +346,13 @@ public class MultiLevelSelectionControlApiTest extends BaseApiTest {
                 .titleText("省份/城市/区县")
                 .optionText("四川省/成都市/双流区\n四川省/成都市/青羊区")
                 .build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         MultiLevelSelectionAnswer answer = rAnswerBuilder(control).selection(MultiLevelSelection.builder()
                 .build()).build();
 
-        NewSubmissionCommand command = newSubmissionCommand(response.getQrId(), response.getHomePageId(), answer);
-        assertError(() -> SubmissionApi.newSubmissionRaw(response.getJwt(), command), MANDATORY_ANSWER_REQUIRED);
+        NewSubmissionCommand command = newSubmissionCommand(response.qrId(), response.homePageId(), answer);
+        assertError(() -> SubmissionApi.newSubmissionRaw(response.jwt(), command), MANDATORY_ANSWER_REQUIRED);
     }
 
     @Test
@@ -362,28 +362,28 @@ public class MultiLevelSelectionControlApiTest extends BaseApiTest {
                 .titleText("省份/城市/区县")
                 .optionText("四川省/成都市/双流区\n四川省/成都市/青羊区")
                 .build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
-        Attribute attribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_FIRST).pageId(response.getHomePageId()).controlId(control.getId()).range(NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
+        Attribute attribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_FIRST).pageId(response.homePageId()).controlId(control.getId()).range(NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
 
         MultiLevelSelectionAnswer firstAnswer = rAnswerBuilder(control).selection(MultiLevelSelection.builder()
                 .level1("四川省")
                 .level2("成都市")
                 .level3("青羊区")
                 .build()).build();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), firstAnswer);
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), firstAnswer);
 
         MultiLevelSelectionAnswer lastAnswer = rAnswerBuilder(control).selection(MultiLevelSelection.builder()
                 .level1("四川省")
                 .level2("成都市")
                 .level3("双流区")
                 .build()).build();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), lastAnswer);
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), lastAnswer);
 
         IndexedField indexedField = app.indexedFieldForAttributeOptional(attribute.getId()).get();
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         MultiLevelSelectionAttributeValue attributeValue = (MultiLevelSelectionAttributeValue) qr.getAttributeValues().get(attribute.getId());
         MultiLevelSelection selection = firstAnswer.getSelection();
         assertEquals(selection, attributeValue.getSelection());
@@ -400,29 +400,29 @@ public class MultiLevelSelectionControlApiTest extends BaseApiTest {
                 .titleText("省份/城市/区县")
                 .optionText("四川省/成都市/双流区\n四川省/成都市/青羊区")
                 .build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        Attribute attribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(control.getId()).range(NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), attribute);
+        Attribute attribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(control.getId()).range(NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), attribute);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
 
         MultiLevelSelectionAnswer firstAnswer = rAnswerBuilder(control).selection(MultiLevelSelection.builder()
                 .level1("四川省")
                 .level2("成都市")
                 .level3("青羊区")
                 .build()).build();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), firstAnswer);
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), firstAnswer);
 
         MultiLevelSelectionAnswer lastAnswer = rAnswerBuilder(control).selection(MultiLevelSelection.builder()
                 .level1("四川省")
                 .level2("成都市")
                 .level3("双流区")
                 .build()).build();
-        SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), lastAnswer);
+        SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), lastAnswer);
 
         IndexedField indexedField = app.indexedFieldForAttributeOptional(attribute.getId()).get();
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
         MultiLevelSelectionAttributeValue attributeValue = (MultiLevelSelectionAttributeValue) qr.getAttributeValues().get(attribute.getId());
         MultiLevelSelection selection = lastAnswer.getSelection();
         assertEquals(selection, attributeValue.getSelection());

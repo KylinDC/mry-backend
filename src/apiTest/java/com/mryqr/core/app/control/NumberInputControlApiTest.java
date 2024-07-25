@@ -65,9 +65,9 @@ public class NumberInputControlApiTest extends BaseApiTest {
         PreparedAppResponse response = setupApi.registerWithApp();
 
         FNumberInputControl control = defaultNumberInputControlBuilder().precision(3).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         Control updatedControl = app.controlByIdOptional(control.getId()).get();
         assertEquals(control, updatedControl);
     }
@@ -92,9 +92,9 @@ public class NumberInputControlApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), dependantControl, calculatedControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), dependantControl, calculatedControl);
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         FNumberInputControl updatedControl = (FNumberInputControl) app.controlByIdOptional(calculatedControl.getId()).get();
         assertEquals(calculatedControl.getAutoCalculateSetting(), updatedControl.getAutoCalculateSetting());
         assertFalse(updatedControl.getFillableSetting().isAutoFill());
@@ -120,11 +120,11 @@ public class NumberInputControlApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         AppSetting setting = app.getSetting();
         setting.homePage().getControls().add(calculatedControl);
 
-        assertError(() -> AppApi.updateAppSettingRaw(response.getJwt(), response.getAppId(), app.getVersion(), setting), VALIDATION_CONTROL_NOT_EXIST);
+        assertError(() -> AppApi.updateAppSettingRaw(response.jwt(), response.appId(), app.getVersion(), setting), VALIDATION_CONTROL_NOT_EXIST);
     }
 
 
@@ -148,11 +148,11 @@ public class NumberInputControlApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         AppSetting setting = app.getSetting();
         setting.homePage().getControls().addAll(newArrayList(calculatedControl, lineTextControl));
 
-        assertError(() -> AppApi.updateAppSettingRaw(response.getJwt(), response.getAppId(), app.getVersion(), setting), CONTROL_NOT_NUMERICAL_VALUED);
+        assertError(() -> AppApi.updateAppSettingRaw(response.jwt(), response.appId(), app.getVersion(), setting), CONTROL_NOT_NUMERICAL_VALUED);
     }
 
 
@@ -176,11 +176,11 @@ public class NumberInputControlApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         AppSetting setting = app.getSetting();
         setting.homePage().getControls().addAll(newArrayList(calculatedControl));
 
-        assertError(() -> AppApi.updateAppSettingRaw(response.getJwt(), response.getAppId(), app.getVersion(), setting), CONTROL_SHOULD_NOT_SELF);
+        assertError(() -> AppApi.updateAppSettingRaw(response.jwt(), response.appId(), app.getVersion(), setting), CONTROL_SHOULD_NOT_SELF);
     }
 
 
@@ -189,11 +189,11 @@ public class NumberInputControlApiTest extends BaseApiTest {
         PreparedAppResponse response = setupApi.registerWithApp();
 
         FNumberInputControl control = defaultNumberInputControlBuilder().minMaxSetting(minMaxOf(1, MAX_NUMBER + 1)).build();
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         AppSetting setting = app.getSetting();
         setting.homePage().getControls().add(control);
 
-        assertError(() -> AppApi.updateAppSettingRaw(response.getJwt(), response.getAppId(), app.getVersion(), setting), MAX_OVERFLOW);
+        assertError(() -> AppApi.updateAppSettingRaw(response.jwt(), response.appId(), app.getVersion(), setting), MAX_OVERFLOW);
     }
 
     @Test
@@ -201,11 +201,11 @@ public class NumberInputControlApiTest extends BaseApiTest {
         PreparedAppResponse response = setupApi.registerWithApp();
 
         FNumberInputControl control = defaultNumberInputControlBuilder().minMaxSetting(minMaxOf(MIN_NUMBER - 1, 100)).build();
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         AppSetting setting = app.getSetting();
         setting.homePage().getControls().add(control);
 
-        assertError(() -> AppApi.updateAppSettingRaw(response.getJwt(), response.getAppId(), app.getVersion(), setting), MIN_OVERFLOW);
+        assertError(() -> AppApi.updateAppSettingRaw(response.jwt(), response.appId(), app.getVersion(), setting), MIN_OVERFLOW);
     }
 
 
@@ -213,13 +213,13 @@ public class NumberInputControlApiTest extends BaseApiTest {
     public void should_answer_normally() {
         PreparedQrResponse response = setupApi.registerWithQr();
         FNumberInputControl control = defaultNumberInputControlBuilder().precision(3).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         NumberInputAnswer answer = RandomTestFixture.rAnswer(control);
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), answer);
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), answer);
 
-        App app = appRepository.byId(response.getAppId());
-        IndexedField indexedField = app.indexedFieldForControlOptional(response.getHomePageId(), control.getId()).get();
+        App app = appRepository.byId(response.appId());
+        IndexedField indexedField = app.indexedFieldForControlOptional(response.homePageId(), control.getId()).get();
         Submission submission = submissionRepository.byId(submissionId);
         NumberInputAnswer updatedAnswer = (NumberInputAnswer) submission.allAnswers().get(control.getId());
         assertEquals(answer, updatedAnswer);
@@ -247,9 +247,9 @@ public class NumberInputControlApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), dependantControl, calculatedControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), dependantControl, calculatedControl);
         NumberInputAnswer answer = rAnswerBuilder(dependantControl).number(11.0).build();
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), answer);
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), answer);
         Submission submission = submissionRepository.byId(submissionId);
         NumberInputAnswer updatedAnswer = (NumberInputAnswer) submission.getAnswers().get(calculatedControl.getId());
         assertEquals(22, updatedAnswer.getNumber());
@@ -276,9 +276,9 @@ public class NumberInputControlApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), dependantControl, calculatedControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), dependantControl, calculatedControl);
         NumberInputAnswer answer = rAnswerBuilder(dependantControl).number(11.2).build();
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), answer);
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), answer);
         Submission submission = submissionRepository.byId(submissionId);
         NumberInputAnswer updatedAnswer = (NumberInputAnswer) submission.getAnswers().get(calculatedControl.getId());
         assertEquals(22, updatedAnswer.getNumber());
@@ -304,9 +304,9 @@ public class NumberInputControlApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), dependantControl, calculatedControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), dependantControl, calculatedControl);
         NumberInputAnswer answer = rAnswerBuilder(dependantControl).number(11.0).build();
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), answer);
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), answer);
         Submission submission = submissionRepository.byId(submissionId);
         NumberInputAnswer updatedAnswer = (NumberInputAnswer) submission.getAnswers().get(calculatedControl.getId());
         assertEquals(3.67, updatedAnswer.getNumber());
@@ -331,10 +331,10 @@ public class NumberInputControlApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), dependantControl, calculatedControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), dependantControl, calculatedControl);
         NumberInputAnswer dependantAnswer = rAnswerBuilder(dependantControl).number(11.0).build();
         NumberInputAnswer calculateAnswer = rAnswerBuilder(calculatedControl).number(20.0).build();
-        String submissionId = SubmissionApi.newSubmission(response.getJwt(), response.getQrId(), response.getHomePageId(), dependantAnswer, calculateAnswer);
+        String submissionId = SubmissionApi.newSubmission(response.jwt(), response.qrId(), response.homePageId(), dependantAnswer, calculateAnswer);
         Submission submission = submissionRepository.byId(submissionId);
         NumberInputAnswer updatedAnswer = (NumberInputAnswer) submission.getAnswers().get(calculatedControl.getId());
         assertEquals(22, updatedAnswer.getNumber());
@@ -359,11 +359,11 @@ public class NumberInputControlApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), dependantControl, calculatedControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), dependantControl, calculatedControl);
         assertNull(submissionRepository
-                .byId(SubmissionApi.newSubmission(response.getJwt(),
-                        response.getQrId(),
-                        response.getHomePageId(),
+                .byId(SubmissionApi.newSubmission(response.jwt(),
+                        response.qrId(),
+                        response.homePageId(),
                         rAnswerBuilder(dependantControl).number(9.0).build()))
                 .getAnswers().get(calculatedControl.getId()));
     }
@@ -388,11 +388,11 @@ public class NumberInputControlApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), dependantControl, calculatedControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), dependantControl, calculatedControl);
         assertNull(submissionRepository
-                .byId(SubmissionApi.newSubmission(response.getJwt(),
-                        response.getQrId(),
-                        response.getHomePageId()))
+                .byId(SubmissionApi.newSubmission(response.jwt(),
+                        response.qrId(),
+                        response.homePageId()))
                 .getAnswers().get(calculatedControl.getId()));
     }
 
@@ -416,11 +416,11 @@ public class NumberInputControlApiTest extends BaseApiTest {
                         .build())
                 .build();
 
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), dependantControl, calculatedControl);
+        AppApi.updateAppControls(response.jwt(), response.appId(), dependantControl, calculatedControl);
         assertNull(submissionRepository
-                .byId(SubmissionApi.newSubmission(response.getJwt(),
-                        response.getQrId(),
-                        response.getHomePageId(),
+                .byId(SubmissionApi.newSubmission(response.jwt(),
+                        response.qrId(),
+                        response.homePageId(),
                         rAnswerBuilder(dependantControl).number(null).build()))
                 .getAnswers().get(calculatedControl.getId()));
     }
@@ -430,95 +430,95 @@ public class NumberInputControlApiTest extends BaseApiTest {
     public void should_fail_answer_if_not_filled_for_mandatory() {
         PreparedQrResponse response = setupApi.registerWithQr();
         FNumberInputControl control = defaultNumberInputControlBuilder().fillableSetting(defaultFillableSettingBuilder().mandatory(true).build()).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         NumberInputAnswer answer = rAnswerBuilder(control).number(null).build();
-        NewSubmissionCommand command = newSubmissionCommand(response.getQrId(), response.getHomePageId(), answer);
+        NewSubmissionCommand command = newSubmissionCommand(response.qrId(), response.homePageId(), answer);
 
-        assertError(() -> SubmissionApi.newSubmissionRaw(response.getJwt(), command), MANDATORY_ANSWER_REQUIRED);
+        assertError(() -> SubmissionApi.newSubmissionRaw(response.jwt(), command), MANDATORY_ANSWER_REQUIRED);
     }
 
     @Test
     public void should_fail_answer_if_number_exceeds_max() {
         PreparedQrResponse response = setupApi.registerWithQr();
         FNumberInputControl control = defaultNumberInputControlBuilder().minMaxSetting(minMaxOf(1, 10)).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         NumberInputAnswer answer = rAnswerBuilder(control).number(11d).build();
-        NewSubmissionCommand command = newSubmissionCommand(response.getQrId(), response.getHomePageId(), answer);
+        NewSubmissionCommand command = newSubmissionCommand(response.qrId(), response.homePageId(), answer);
 
-        assertError(() -> SubmissionApi.newSubmissionRaw(response.getJwt(), command), MAX_INPUT_NUMBER_REACHED);
+        assertError(() -> SubmissionApi.newSubmissionRaw(response.jwt(), command), MAX_INPUT_NUMBER_REACHED);
     }
 
     @Test
     public void should_fail_answer_if_number_less_than_min() {
         PreparedQrResponse response = setupApi.registerWithQr();
         FNumberInputControl control = defaultNumberInputControlBuilder().minMaxSetting(minMaxOf(5, 10)).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         NumberInputAnswer answer = rAnswerBuilder(control).number(1d).build();
-        NewSubmissionCommand command = newSubmissionCommand(response.getQrId(), response.getHomePageId(), answer);
+        NewSubmissionCommand command = newSubmissionCommand(response.qrId(), response.homePageId(), answer);
 
-        assertError(() -> SubmissionApi.newSubmissionRaw(response.getJwt(), command), MIN_INPUT_NUMBER_REACHED);
+        assertError(() -> SubmissionApi.newSubmissionRaw(response.jwt(), command), MIN_INPUT_NUMBER_REACHED);
     }
 
     @Test
     public void should_fail_answer_if_number_has_decimal_for_integer() {
         PreparedQrResponse response = setupApi.registerWithQr();
         FNumberInputControl control = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         NumberInputAnswer answer = rAnswerBuilder(control).number(1.1d).build();
-        NewSubmissionCommand command = newSubmissionCommand(response.getQrId(), response.getHomePageId(), answer);
+        NewSubmissionCommand command = newSubmissionCommand(response.qrId(), response.homePageId(), answer);
 
-        assertError(() -> SubmissionApi.newSubmissionRaw(response.getJwt(), command), INCORRECT_INTEGER_PRECISION);
+        assertError(() -> SubmissionApi.newSubmissionRaw(response.jwt(), command), INCORRECT_INTEGER_PRECISION);
     }
 
     @Test
     public void should_fail_answer_if_number_has_decimal_more_than_required() {
         PreparedQrResponse response = setupApi.registerWithQr();
         FNumberInputControl control = defaultNumberInputControlBuilder().precision(2).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
 
         NumberInputAnswer answer = rAnswerBuilder(control).number(1.111d).build();
-        NewSubmissionCommand command = newSubmissionCommand(response.getQrId(), response.getHomePageId(), answer);
+        NewSubmissionCommand command = newSubmissionCommand(response.qrId(), response.homePageId(), answer);
 
-        assertError(() -> SubmissionApi.newSubmissionRaw(response.getJwt(), command), INCORRECT_NUMBER_INPUT_PRECISION);
+        assertError(() -> SubmissionApi.newSubmissionRaw(response.jwt(), command), INCORRECT_NUMBER_INPUT_PRECISION);
     }
 
     @Test
     public void should_calculate_submission_value_as_attribute_value() {
         PreparedQrResponse response = setupApi.registerWithQr(rEmail(), rPassword());
         FNumberInputControl control = defaultNumberInputControlBuilder().precision(0).build();
-        AppApi.updateAppControls(response.getJwt(), response.getAppId(), control);
-        Attribute firstAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_FIRST).pageId(response.getHomePageId()).controlId(control.getId()).range(NO_LIMIT).build();
-        Attribute lastAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.getHomePageId()).controlId(control.getId()).range(NO_LIMIT).build();
-        Attribute maxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_MAX).pageId(response.getHomePageId()).controlId(control.getId()).range(NO_LIMIT).build();
-        Attribute minAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_MIN).pageId(response.getHomePageId()).controlId(control.getId()).range(NO_LIMIT).build();
-        Attribute avgAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_AVERAGE).pageId(response.getHomePageId()).controlId(control.getId()).range(NO_LIMIT).build();
-        Attribute sumAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_SUM).pageId(response.getHomePageId()).controlId(control.getId()).range(NO_LIMIT).build();
-        AppApi.updateAppAttributes(response.getJwt(), response.getAppId(), firstAttribute, lastAttribute, maxAttribute, minAttribute, avgAttribute, sumAttribute);
+        AppApi.updateAppControls(response.jwt(), response.appId(), control);
+        Attribute firstAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_FIRST).pageId(response.homePageId()).controlId(control.getId()).range(NO_LIMIT).build();
+        Attribute lastAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_LAST).pageId(response.homePageId()).controlId(control.getId()).range(NO_LIMIT).build();
+        Attribute maxAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_MAX).pageId(response.homePageId()).controlId(control.getId()).range(NO_LIMIT).build();
+        Attribute minAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_MIN).pageId(response.homePageId()).controlId(control.getId()).range(NO_LIMIT).build();
+        Attribute avgAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_AVERAGE).pageId(response.homePageId()).controlId(control.getId()).range(NO_LIMIT).build();
+        Attribute sumAttribute = Attribute.builder().name(rAttributeName()).id(newAttributeId()).type(CONTROL_SUM).pageId(response.homePageId()).controlId(control.getId()).range(NO_LIMIT).build();
+        AppApi.updateAppAttributes(response.jwt(), response.appId(), firstAttribute, lastAttribute, maxAttribute, minAttribute, avgAttribute, sumAttribute);
 
-        SubmissionApi.newSubmission(response.getJwt(),
-                newSubmissionCommand(response.getQrId(), response.getHomePageId(),
+        SubmissionApi.newSubmission(response.jwt(),
+                newSubmissionCommand(response.qrId(), response.homePageId(),
                         NumberInputAnswer.builder().controlId(control.getId()).controlType(control.getType()).number(2d).build()));
 
-        SubmissionApi.newSubmission(response.getJwt(),
-                newSubmissionCommand(response.getQrId(), response.getHomePageId(),
+        SubmissionApi.newSubmission(response.jwt(),
+                newSubmissionCommand(response.qrId(), response.homePageId(),
                         NumberInputAnswer.builder().controlId(control.getId()).controlType(control.getType()).number(1d).build()));
 
-        SubmissionApi.newSubmission(response.getJwt(),
-                newSubmissionCommand(response.getQrId(), response.getHomePageId(),
+        SubmissionApi.newSubmission(response.jwt(),
+                newSubmissionCommand(response.qrId(), response.homePageId(),
                         NumberInputAnswer.builder().controlId(control.getId()).controlType(control.getType()).number(3d).build()));
 
-        App app = appRepository.byId(response.getAppId());
+        App app = appRepository.byId(response.appId());
         IndexedField firstIndexedField = app.indexedFieldForAttributeOptional(firstAttribute.getId()).get();
         IndexedField lastIndexedField = app.indexedFieldForAttributeOptional(lastAttribute.getId()).get();
         IndexedField maxIndexedField = app.indexedFieldForAttributeOptional(maxAttribute.getId()).get();
         IndexedField minIndexedField = app.indexedFieldForAttributeOptional(minAttribute.getId()).get();
         IndexedField avgIndexedField = app.indexedFieldForAttributeOptional(avgAttribute.getId()).get();
         IndexedField sumIndexedField = app.indexedFieldForAttributeOptional(sumAttribute.getId()).get();
-        QR qr = qrRepository.byId(response.getQrId());
+        QR qr = qrRepository.byId(response.qrId());
 
         assertEquals(2, ((DoubleAttributeValue) qr.getAttributeValues().get(firstAttribute.getId())).getNumber());
         assertEquals(3, ((DoubleAttributeValue) qr.getAttributeValues().get(lastAttribute.getId())).getNumber());

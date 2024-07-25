@@ -164,7 +164,7 @@ class LoginControllerApiTest extends BaseApiTest {
         String password = rPassword();
 
         LoginResponse response = setupApi.registerWithLogin(email, password);
-        Member member = memberRepository.byId(response.getMemberId());
+        Member member = memberRepository.byId(response.memberId());
         member.bindMobileWx(rWxUnionId(), rMobileWxOpenId(), member.toUser());
         memberRepository.save(member);
 
@@ -177,7 +177,7 @@ class LoginControllerApiTest extends BaseApiTest {
                 .build();
 
         LoginApi.loginWithMobileOrEmail(loginCommand);
-        Member updatedMember = memberRepository.byId(response.getMemberId());
+        Member updatedMember = memberRepository.byId(response.memberId());
         assertEquals(mobileWxOpenId, updatedMember.getMobileWxOpenId());
         assertEquals(wxUnionId, updatedMember.getWxUnionId());
     }
@@ -273,12 +273,12 @@ class LoginControllerApiTest extends BaseApiTest {
         String password = rPassword();
         MobileOrEmailLoginCommand loginCommand = MobileOrEmailLoginCommand.builder().mobileOrEmail(email).password(password).build();
         LoginResponse response = setupApi.registerWithLogin(email, password);
-        Member member = memberRepository.byId(response.getMemberId());
+        Member member = memberRepository.byId(response.memberId());
         assertNotNull(LoginApi.loginWithMobileOrEmail(loginCommand));
 
         ReflectionTestUtils.setField(member.getFailedLoginCount(), "count", 51);
         memberRepository.save(member);
-        assertError(() -> MemberApi.myProfileRaw(response.getJwt()), MEMBER_ALREADY_LOCKED);
+        assertError(() -> MemberApi.myProfileRaw(response.jwt()), MEMBER_ALREADY_LOCKED);
     }
 
     @Test
@@ -287,8 +287,8 @@ class LoginControllerApiTest extends BaseApiTest {
 
         String password = rPassword();
         String mobile = rMobile();
-        CreateMemberResponse memberResponse = MemberApi.createMemberAndLogin(response.getJwt(), rMemberName(), mobile, password);
-        MemberApi.deactivateMember(response.getJwt(), memberResponse.getMemberId());
+        CreateMemberResponse memberResponse = MemberApi.createMemberAndLogin(response.jwt(), rMemberName(), mobile, password);
+        MemberApi.deactivateMember(response.jwt(), memberResponse.memberId());
 
         MobileOrEmailLoginCommand loginCommand = MobileOrEmailLoginCommand.builder().mobileOrEmail(mobile).password(password).build();
         assertError(() -> LoginApi.loginWithMobileOrEmailRaw(loginCommand), MEMBER_ALREADY_DEACTIVATED);
@@ -297,20 +297,20 @@ class LoginControllerApiTest extends BaseApiTest {
     @Test
     public void should_fail_authentication_if_deactivated() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        CreateMemberResponse memberResponse = MemberApi.createMemberAndLogin(response.getJwt());
+        CreateMemberResponse memberResponse = MemberApi.createMemberAndLogin(response.jwt());
 
-        MemberApi.deactivateMember(response.getJwt(), memberResponse.getMemberId());
-        assertError(() -> MemberApi.myProfileRaw(memberResponse.getJwt()), MEMBER_ALREADY_DEACTIVATED);
+        MemberApi.deactivateMember(response.jwt(), memberResponse.memberId());
+        assertError(() -> MemberApi.myProfileRaw(memberResponse.jwt()), MEMBER_ALREADY_DEACTIVATED);
     }
 
     @Test
     public void should_fail_authentication_if_tenant_deactivated() {
         PreparedAppResponse response = setupApi.registerWithApp();
-        CreateMemberResponse memberResponse = MemberApi.createMemberAndLogin(response.getJwt());
-        Member member = memberRepository.byId(memberResponse.getMemberId());
+        CreateMemberResponse memberResponse = MemberApi.createMemberAndLogin(response.jwt());
+        Member member = memberRepository.byId(memberResponse.memberId());
         ReflectionTestUtils.setField(member, "tenantActive", false);
         memberRepository.save(member);
-        assertError(() -> MemberApi.myProfileRaw(memberResponse.getJwt()), TENANT_ALREADY_DEACTIVATED);
+        assertError(() -> MemberApi.myProfileRaw(memberResponse.jwt()), TENANT_ALREADY_DEACTIVATED);
     }
 
     @Test

@@ -104,8 +104,8 @@ class TenantControllerApiTest extends BaseApiTest {
         String tenantName = rTenantName();
         UploadedFile loginBackground = rImageFile();
         UpdateTenantBaseSettingCommand command = UpdateTenantBaseSettingCommand.builder().name(tenantName).loginBackground(loginBackground).build();
-        TenantApi.updateBaseSetting(response.getJwt(), command);
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        TenantApi.updateBaseSetting(response.jwt(), command);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         assertEquals(tenantName, tenant.getName());
         assertEquals(loginBackground, tenant.getLoginBackground());
     }
@@ -113,10 +113,10 @@ class TenantControllerApiTest extends BaseApiTest {
     @Test
     public void should_update_logo() {
         LoginResponse response = setupApi.registerWithLogin(rMobile(), rPassword());
-        setupApi.updateTenantPackages(response.getTenantId(), BASIC);
+        setupApi.updateTenantPackages(response.tenantId(), BASIC);
         UploadedFile logo = rImageFile();
-        TenantApi.updateLogo(response.getJwt(), UpdateTenantLogoCommand.builder().logo(logo).build());
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        TenantApi.updateLogo(response.jwt(), UpdateTenantLogoCommand.builder().logo(logo).build());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         assertEquals(logo, tenant.getLogo());
     }
 
@@ -124,16 +124,16 @@ class TenantControllerApiTest extends BaseApiTest {
     public void should_not_update_logo_if_packages_not_allowed() {
         LoginResponse response = setupApi.registerWithLogin(rMobile(), rPassword());
         UpdateTenantLogoCommand command = UpdateTenantLogoCommand.builder().logo(rImageFile()).build();
-        assertError(() -> TenantApi.updateLogoRaw(response.getJwt(), command), UPDATE_LOGO_NOT_ALLOWED);
+        assertError(() -> TenantApi.updateLogoRaw(response.jwt(), command), UPDATE_LOGO_NOT_ALLOWED);
     }
 
     @Test
     public void should_update_subdomain() {
         LoginResponse response = setupApi.registerWithLogin(rMobile(), rPassword());
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         String subdomainPrefix = rSubdomainPrefix();
-        TenantApi.updateSubdomain(response.getJwt(), UpdateTenantSubdomainCommand.builder().subdomainPrefix(subdomainPrefix).build());
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        TenantApi.updateSubdomain(response.jwt(), UpdateTenantSubdomainCommand.builder().subdomainPrefix(subdomainPrefix).build());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         assertEquals(subdomainPrefix, tenant.getSubdomainPrefix());
     }
 
@@ -141,63 +141,63 @@ class TenantControllerApiTest extends BaseApiTest {
     public void should_fail_update_subdomain_is_plan_not_allowed() {
         LoginResponse response = setupApi.registerWithLogin(rMobile(), rPassword());
         UpdateTenantSubdomainCommand command = UpdateTenantSubdomainCommand.builder().subdomainPrefix(rSubdomainPrefix()).build();
-        assertError(() -> TenantApi.updateSubdomainRaw(response.getJwt(), command), UPDATE_SUBDOMAIN_NOT_ALLOWED);
+        assertError(() -> TenantApi.updateSubdomainRaw(response.jwt(), command), UPDATE_SUBDOMAIN_NOT_ALLOWED);
     }
 
     @Test
     public void should_fail_update_subdomain_if_already_exists() {
         LoginResponse response = setupApi.registerWithLogin(rMobile(), rPassword());
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
         String subdomainPrefix = rSubdomainPrefix();
-        TenantApi.updateSubdomain(response.getJwt(), UpdateTenantSubdomainCommand.builder().subdomainPrefix(subdomainPrefix).build());
+        TenantApi.updateSubdomain(response.jwt(), UpdateTenantSubdomainCommand.builder().subdomainPrefix(subdomainPrefix).build());
 
         LoginResponse anotherTenant = setupApi.registerWithLogin(rMobile(), rPassword());
-        setupApi.updateTenantPackages(anotherTenant.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(anotherTenant.tenantId(), PROFESSIONAL);
         UpdateTenantSubdomainCommand command = UpdateTenantSubdomainCommand.builder().subdomainPrefix(subdomainPrefix).build();
-        assertError(() -> TenantApi.updateSubdomainRaw(anotherTenant.getJwt(), command), TENANT_WITH_SUBDOMAIN_PREFIX_ALREADY_EXISTS);
+        assertError(() -> TenantApi.updateSubdomainRaw(anotherTenant.jwt(), command), TENANT_WITH_SUBDOMAIN_PREFIX_ALREADY_EXISTS);
     }
 
     @Test
     public void should_raise_event_when_subdomain_name_changed() {
         LoginResponse response = setupApi.registerWithLogin(rMobile(), rPassword());
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         String subdomainPrefix = rSubdomainPrefix();
-        TenantApi.updateSubdomain(response.getJwt(), UpdateTenantSubdomainCommand.builder().subdomainPrefix(subdomainPrefix).build());
+        TenantApi.updateSubdomain(response.jwt(), UpdateTenantSubdomainCommand.builder().subdomainPrefix(subdomainPrefix).build());
 
-        TenantSubdomainUpdatedEvent event = domainEventDao.latestEventFor(response.getTenantId(), TENANT_SUBDOMAIN_UPDATED, TenantSubdomainUpdatedEvent.class);
+        TenantSubdomainUpdatedEvent event = domainEventDao.latestEventFor(response.tenantId(), TENANT_SUBDOMAIN_UPDATED, TenantSubdomainUpdatedEvent.class);
         assertNull(event.getOldSubdomainPrefix());
         assertEquals(subdomainPrefix, event.getNewSubdomainPrefix());
-        assertEquals(response.getTenantId(), event.getArTenantId());
+        assertEquals(response.tenantId(), event.getArTenantId());
     }
 
     @Test
     public void should_fail_update_domain_name_if_changed_too_often() {
         LoginResponse response = setupApi.registerWithLogin(rMobile(), rPassword());
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
-        TenantApi.updateSubdomain(response.getJwt(), UpdateTenantSubdomainCommand.builder().subdomainPrefix(rSubdomainPrefix()).build());
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
+        TenantApi.updateSubdomain(response.jwt(), UpdateTenantSubdomainCommand.builder().subdomainPrefix(rSubdomainPrefix()).build());
         UpdateTenantSubdomainCommand command = UpdateTenantSubdomainCommand.builder().subdomainPrefix(rSubdomainPrefix()).build();
-        assertError(() -> TenantApi.updateSubdomainRaw(response.getJwt(), command), SUBDOMAIN_UPDATED_TOO_OFTEN);
+        assertError(() -> TenantApi.updateSubdomainRaw(response.jwt(), command), SUBDOMAIN_UPDATED_TOO_OFTEN);
     }
 
     @Test
     public void should_fail_update_subdomain_if_domain_name_is_forbidden() {
         LoginResponse response = setupApi.registerWithLogin(rMobile(), rPassword());
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         String notAllowedDomainName = "www";
         UpdateTenantSubdomainCommand command = UpdateTenantSubdomainCommand.builder().subdomainPrefix(notAllowedDomainName).build();
 
-        assertError(() -> TenantApi.updateSubdomainRaw(response.getJwt(), command), FORBIDDEN_SUBDOMAIN_PREFIX);
+        assertError(() -> TenantApi.updateSubdomainRaw(response.jwt(), command), FORBIDDEN_SUBDOMAIN_PREFIX);
     }
 
     @Test
     public void should_refresh_api_secret() {
         LoginResponse response = setupApi.registerWithLogin(rMobile(), rPassword());
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
-        String newApiSecret = TenantApi.refreshApiSecret(response.getJwt());
-        Tenant updatedTenant = tenantRepository.byId(response.getTenantId());
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
+        Tenant tenant = tenantRepository.byId(response.tenantId());
+        String newApiSecret = TenantApi.refreshApiSecret(response.jwt());
+        Tenant updatedTenant = tenantRepository.byId(response.tenantId());
 
         assertNotEquals(tenant.getApiSetting().getApiSecret(), newApiSecret);
         assertEquals(updatedTenant.getApiSetting().getApiSecret(), newApiSecret);
@@ -206,16 +206,16 @@ class TenantControllerApiTest extends BaseApiTest {
     @Test
     public void should_not_refresh_api_secret_if_plan_not_allowed() {
         LoginResponse response = setupApi.registerWithLogin(rMobile(), rPassword());
-        assertError(() -> TenantApi.refreshApiSecretRaw(response.getJwt()), REFRESH_API_SECRET_NOT_ALLOWED);
+        assertError(() -> TenantApi.refreshApiSecretRaw(response.jwt()), REFRESH_API_SECRET_NOT_ALLOWED);
     }
 
     @Test
     public void should_fetch_tenant_info() {
         PreparedQrResponse response = setupApi.registerWithQr(rMobile(), rPassword());
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
 
-        QTenantInfo baseInfo = TenantApi.fetchTenantInfo(response.getJwt());
-        assertEquals(response.getTenantId(), baseInfo.getTenantId());
+        QTenantInfo baseInfo = TenantApi.fetchTenantInfo(response.jwt());
+        assertEquals(response.tenantId(), baseInfo.getTenantId());
         assertEquals(tenant.getCreatedAt(), baseInfo.getCreatedAt());
         assertEquals(tenant.getCreatedBy(), baseInfo.getCreatedBy());
         assertEquals(tenant.getName(), baseInfo.getName());
@@ -230,8 +230,8 @@ class TenantControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_base_setting() {
         LoginResponse response = setupApi.registerWithLogin(rMobile(), rPassword());
-        QTenantBaseSetting baseSetting = TenantApi.fetchBaseSetting(response.getJwt());
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        QTenantBaseSetting baseSetting = TenantApi.fetchBaseSetting(response.jwt());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         assertEquals(tenant.getId(), baseSetting.getId());
         assertEquals(tenant.getName(), baseSetting.getName());
     }
@@ -239,22 +239,22 @@ class TenantControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_logo() {
         LoginResponse response = setupApi.registerWithLogin(rMobile(), rPassword());
-        setupApi.updateTenantPackages(response.getTenantId(), BASIC);
+        setupApi.updateTenantPackages(response.tenantId(), BASIC);
         UploadedFile logo = rImageFile();
-        TenantApi.updateLogo(response.getJwt(), UpdateTenantLogoCommand.builder().logo(logo).build());
-        QTenantLogo qLogo = TenantApi.fetchLogo(response.getJwt());
+        TenantApi.updateLogo(response.jwt(), UpdateTenantLogoCommand.builder().logo(logo).build());
+        QTenantLogo qLogo = TenantApi.fetchLogo(response.jwt());
         assertEquals(logo, qLogo.getLogo());
     }
 
     @Test
     public void should_fetch_subdomain() {
         LoginResponse response = setupApi.registerWithLogin(rMobile(), rPassword());
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
-        assertTrue(TenantApi.fetchSubdomain(response.getJwt()).isUpdatable());
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
+        assertTrue(TenantApi.fetchSubdomain(response.jwt()).isUpdatable());
 
         String subdomainPrefix = rSubdomainPrefix();
-        TenantApi.updateSubdomain(response.getJwt(), UpdateTenantSubdomainCommand.builder().subdomainPrefix(subdomainPrefix).build());
-        QTenantSubdomain qSubdomain = TenantApi.fetchSubdomain(response.getJwt());
+        TenantApi.updateSubdomain(response.jwt(), UpdateTenantSubdomainCommand.builder().subdomainPrefix(subdomainPrefix).build());
+        QTenantSubdomain qSubdomain = TenantApi.fetchSubdomain(response.jwt());
         assertEquals(subdomainPrefix, qSubdomain.getSubdomainPrefix());
         assertFalse(qSubdomain.isUpdatable());
     }
@@ -262,27 +262,27 @@ class TenantControllerApiTest extends BaseApiTest {
     @Test
     public void should_fetch_tenant_api_setting() {
         LoginResponse response = setupApi.registerWithLogin(rMobile(), rPassword());
-        QTenantApiSetting qTenantApiSetting = TenantApi.fetchApiSetting(response.getJwt());
+        QTenantApiSetting qTenantApiSetting = TenantApi.fetchApiSetting(response.jwt());
 
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         assertEquals(qTenantApiSetting.getApiSetting(), tenant.getApiSetting());
     }
 
     @Test
     public void should_fetch_tenant_public_profile() {
         LoginResponse response = setupApi.registerWithLogin(rMobile(), rPassword());
-        setupApi.updateTenantPackages(response.getTenantId(), PROFESSIONAL);
+        setupApi.updateTenantPackages(response.tenantId(), PROFESSIONAL);
 
         UploadedFile logo = rImageFile();
-        TenantApi.updateLogo(response.getJwt(), UpdateTenantLogoCommand.builder().logo(logo).build());
+        TenantApi.updateLogo(response.jwt(), UpdateTenantLogoCommand.builder().logo(logo).build());
 
         String subdomainPrefix = rSubdomainPrefix();
         UploadedFile loginBackground = rImageFile();
-        TenantApi.updateSubdomain(response.getJwt(), UpdateTenantSubdomainCommand.builder().subdomainPrefix(subdomainPrefix).build());
-        TenantApi.updateBaseSetting(response.getJwt(), UpdateTenantBaseSettingCommand.builder().name("aTenantName").loginBackground(loginBackground).build());
+        TenantApi.updateSubdomain(response.jwt(), UpdateTenantSubdomainCommand.builder().subdomainPrefix(subdomainPrefix).build());
+        TenantApi.updateBaseSetting(response.jwt(), UpdateTenantBaseSettingCommand.builder().name("aTenantName").loginBackground(loginBackground).build());
 
         QTenantPublicProfile publicProfile = TenantApi.fetchTenantPublicProfile(subdomainPrefix);
-        assertEquals(response.getTenantId(), publicProfile.getTenantId());
+        assertEquals(response.tenantId(), publicProfile.getTenantId());
         assertEquals(logo, publicProfile.getLogo());
         assertEquals(loginBackground, publicProfile.getLoginBackground());
         assertEquals("aTenantName", publicProfile.getName());
@@ -302,12 +302,12 @@ class TenantControllerApiTest extends BaseApiTest {
                         .phone("028-12342345")
                         .build())
                 .build();
-        TenantApi.updateInvoiceTitle(response.getJwt(), command);
+        TenantApi.updateInvoiceTitle(response.jwt(), command);
 
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         assertEquals(tenant.getInvoiceTitle(), command.getTitle());
 
-        QTenantInvoiceTitle qInvoiceTitle = TenantApi.fetchInvoiceTitle(response.getJwt());
+        QTenantInvoiceTitle qInvoiceTitle = TenantApi.fetchInvoiceTitle(response.jwt());
         assertEquals(tenant.getInvoiceTitle(), qInvoiceTitle.getTitle());
     }
 
@@ -322,11 +322,11 @@ class TenantControllerApiTest extends BaseApiTest {
                 .address(rAddress())
                 .build();
 
-        TenantApi.addConsignee(response.getJwt(), AddConsigneeCommand.builder()
+        TenantApi.addConsignee(response.jwt(), AddConsigneeCommand.builder()
                 .consignee(consignee)
                 .build());
 
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         assertEquals(1, tenant.getConsignees().size());
         assertEquals(consignee, tenant.getConsignees().get(0));
     }
@@ -335,7 +335,7 @@ class TenantControllerApiTest extends BaseApiTest {
     public void should_fail_add_consignee_if_max_size_reached() {
         LoginResponse response = setupApi.registerWithLogin();
 
-        IntStream.range(0, 5).forEach(value -> TenantApi.addConsignee(response.getJwt(), AddConsigneeCommand.builder()
+        IntStream.range(0, 5).forEach(value -> TenantApi.addConsignee(response.jwt(), AddConsigneeCommand.builder()
                 .consignee(Consignee.builder()
                         .id(newShortUuid())
                         .name(rMemberName())
@@ -344,7 +344,7 @@ class TenantControllerApiTest extends BaseApiTest {
                         .build())
                 .build()));
 
-        assertError(() -> TenantApi.addConsigneeRaw(response.getJwt(), AddConsigneeCommand.builder()
+        assertError(() -> TenantApi.addConsigneeRaw(response.jwt(), AddConsigneeCommand.builder()
                 .consignee(Consignee.builder()
                         .id(newShortUuid())
                         .name(rMemberName())
@@ -365,11 +365,11 @@ class TenantControllerApiTest extends BaseApiTest {
                 .address(rAddress())
                 .build();
 
-        TenantApi.addConsignee(response.getJwt(), AddConsigneeCommand.builder()
+        TenantApi.addConsignee(response.jwt(), AddConsigneeCommand.builder()
                 .consignee(consignee)
                 .build());
 
-        assertError(() -> TenantApi.addConsigneeRaw(response.getJwt(), AddConsigneeCommand.builder()
+        assertError(() -> TenantApi.addConsigneeRaw(response.jwt(), AddConsigneeCommand.builder()
                 .consignee(consignee)
                 .build()), CONSIGNEE_ID_DUPLICATED);
     }
@@ -385,7 +385,7 @@ class TenantControllerApiTest extends BaseApiTest {
                 .address(rAddress())
                 .build();
 
-        TenantApi.addConsignee(response.getJwt(), AddConsigneeCommand.builder()
+        TenantApi.addConsignee(response.jwt(), AddConsigneeCommand.builder()
                 .consignee(consignee)
                 .build());
 
@@ -396,11 +396,11 @@ class TenantControllerApiTest extends BaseApiTest {
                 .address(rAddress())
                 .build();
 
-        TenantApi.updateConsignee(response.getJwt(), UpdateConsigneeCommand.builder()
+        TenantApi.updateConsignee(response.jwt(), UpdateConsigneeCommand.builder()
                 .consignee(updateConsignee)
                 .build());
 
-        Tenant tenant = tenantRepository.byId(response.getTenantId());
+        Tenant tenant = tenantRepository.byId(response.tenantId());
         assertEquals(1, tenant.getConsignees().size());
         assertEquals(updateConsignee, tenant.getConsignees().get(0));
     }
@@ -416,20 +416,20 @@ class TenantControllerApiTest extends BaseApiTest {
                 .address(rAddress())
                 .build();
 
-        TenantApi.addConsignee(response.getJwt(), AddConsigneeCommand.builder()
+        TenantApi.addConsignee(response.jwt(), AddConsigneeCommand.builder()
                 .consignee(consignee)
                 .build());
-        assertEquals(1, tenantRepository.byId(response.getTenantId()).getConsignees().size());
+        assertEquals(1, tenantRepository.byId(response.tenantId()).getConsignees().size());
 
-        TenantApi.deleteConsignee(response.getJwt(), consignee.getId());
-        assertEquals(0, tenantRepository.byId(response.getTenantId()).getConsignees().size());
+        TenantApi.deleteConsignee(response.jwt(), consignee.getId());
+        assertEquals(0, tenantRepository.byId(response.tenantId()).getConsignees().size());
     }
 
     @Test
     public void should_list_consignees() {
         LoginResponse response = setupApi.registerWithLogin();
 
-        IntStream.range(0, 5).forEach(value -> TenantApi.addConsignee(response.getJwt(), AddConsigneeCommand.builder()
+        IntStream.range(0, 5).forEach(value -> TenantApi.addConsignee(response.jwt(), AddConsigneeCommand.builder()
                 .consignee(Consignee.builder()
                         .id(newShortUuid())
                         .name(rMemberName())
@@ -438,16 +438,16 @@ class TenantControllerApiTest extends BaseApiTest {
                         .build())
                 .build()));
 
-        List<Consignee> consignees = TenantApi.listConsignees(response.getJwt());
+        List<Consignee> consignees = TenantApi.listConsignees(response.jwt());
         assertEquals(5, consignees.size());
     }
 
     @Test
     public void should_cache_tenant() {
         LoginResponse response = setupApi.registerWithLogin();
-        String key = "Cache:TENANT::" + response.getTenantId();
+        String key = "Cache:TENANT::" + response.tenantId();
         assertNotEquals(TRUE, stringRedisTemplate.hasKey(key));
-        Tenant tenant = tenantRepository.cachedById(response.getTenantId());
+        Tenant tenant = tenantRepository.cachedById(response.tenantId());
         assertEquals(TRUE, stringRedisTemplate.hasKey(key));
 
         tenantRepository.save(tenant);
@@ -457,7 +457,7 @@ class TenantControllerApiTest extends BaseApiTest {
     @Test
     public void should_cache_api_tenant() {
         LoginResponse response = setupApi.registerWithLogin();
-        Tenant tenant = tenantRepository.cachedById(response.getTenantId());
+        Tenant tenant = tenantRepository.cachedById(response.tenantId());
         String apiKey = tenant.getApiSetting().getApiKey();
 
         String key = "Cache:API_TENANT::" + apiKey;
